@@ -3,14 +3,15 @@
 import React, { useState, useEffect } from 'react';
 import { useSession } from '@/contexts/SessionContext';
 import { supabase } from '@/integrations/supabase/client';
-import { format, startOfDay, addDays } from 'date-fns'; // Added addDays
+import { format, startOfDay, addDays } from 'date-fns';
 import CalendarNavigation from '@/components/CalendarNavigation';
 import AppointmentFilters from '@/components/AppointmentFilters';
 import AppointmentActions from '@/components/AppointmentActions';
 import AppointmentCalendarGrid from '@/components/AppointmentCalendarGrid';
-import { RefreshCcw } from 'lucide-react';
+import { RefreshCcw, Phone } from 'lucide-react'; // Import Phone icon
 import { Button } from '@/components/ui/button';
 import { showSuccess, showError } from '@/utils/toast';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'; // Import Tooltip components
 
 // Interfaces for data fetched from Supabase
 interface Technician {
@@ -94,7 +95,7 @@ const Appointments = () => {
           technician_id,
           service_id,
           clients (first_name, last_name),
-          technicians (id, name), <!-- Changed here: added 'id' -->
+          technicians (id, name),
           services (name, price)
         `)
         .eq('user_id', user.id)
@@ -150,6 +151,10 @@ const Appointments = () => {
     showSuccess(`Ação "${action}" em desenvolvimento!`);
   };
 
+  const handleCallClient = () => {
+    showSuccess('Funcionalidade "Ver/Ligar para Cliente" em desenvolvimento!');
+  };
+
   return (
     <div className="flex flex-col h-full bg-gray-900 text-gray-100 p-4">
       <h1 className="text-3xl font-bold mb-6">Agendamentos</h1>
@@ -173,6 +178,16 @@ const Appointments = () => {
           onNewAppointment={handleNewAppointment}
           onOtherAction={handleOtherAction}
         />
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="outline" onClick={handleCallClient} className="bg-gray-800 text-yellow-500 hover:bg-gray-700 border-yellow-500">
+              <Phone className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Ver/Ligar para Cliente</p>
+          </TooltipContent>
+        </Tooltip>
       </div>
 
       {/* Main Calendar Grid */}
