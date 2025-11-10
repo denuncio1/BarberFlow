@@ -16,9 +16,9 @@ interface Appointment {
   id: string;
   appointment_date: string;
   status: string;
-  clients: { first_name: string; last_name: string } | null; // Corrigido para objeto único
-  technicians: { name: string } | null; // Corrigido para objeto único
-  services: { name: string; price: number } | null; // Corrigido para objeto único
+  clients: { first_name: string; last_name: string }[] | null; // Corrigido para array
+  technicians: { name: string }[] | null; // Corrigido para array
+  services: { name: string; price: number }[] | null; // Corrigido para array
   payment_value: number;
   points_earned: number;
 }
@@ -115,7 +115,7 @@ const HistoryPage = () => {
         // Mock payment_value and points_earned for now, as they are not in the current schema
         const appointmentsWithMockData = data?.map(app => ({
           ...app,
-          payment_value: app.services?.price || 0, // Acessa diretamente a propriedade 'price'
+          payment_value: app.services?.[0]?.price || 0, // Acessa a propriedade 'price' do primeiro serviço no array
           points_earned: app.status === 'finalized' ? 60 : (app.status === 'no-show' ? 40 : 0), // Example logic
         })) || [];
         setAppointments(appointmentsWithMockData as Appointment[]);
@@ -257,9 +257,9 @@ const HistoryPage = () => {
                     <TableCell className="font-medium">
                       {format(new Date(appointment.appointment_date), 'HH:mm', { locale: ptBR })} - {format(addDays(new Date(appointment.appointment_date), 0, /* assuming 1 hour duration for now */), 'HH:mm', { locale: ptBR })}
                     </TableCell>
-                    <TableCell>{appointment.clients ? `${appointment.clients.first_name} ${appointment.clients.last_name}` : 'N/A'}</TableCell>
-                    <TableCell>{appointment.technicians?.name || 'N/A'}</TableCell>
-                    <TableCell>{appointment.services?.name || 'N/A'}</TableCell>
+                    <TableCell>{appointment.clients?.[0] ? `${appointment.clients[0].first_name} ${appointment.clients[0].last_name}` : 'N/A'}</TableCell>
+                    <TableCell>{appointment.technicians?.[0]?.name || 'N/A'}</TableCell>
+                    <TableCell>{appointment.services?.[0]?.name || 'N/A'}</TableCell>
                     <TableCell>Pagamento pendente</TableCell> {/* Placeholder */}
                     <TableCell className="text-right">R$ {appointment.payment_value.toFixed(2).replace('.', ',')}</TableCell>
                     <TableCell className="text-right">{appointment.points_earned}</TableCell>
