@@ -3,11 +3,19 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess } from '@/utils/toast';
+import { ModeToggle } from './ModeToggle'; // Import ModeToggle
+import { useTranslation } from 'react-i18next'; // Import useTranslation
 
 const Header = () => {
+  const { t, i18n } = useTranslation();
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    showSuccess('Logout realizado com sucesso!');
+    showSuccess(t('logout_success'));
+  };
+
+  const changeLanguage = (lng: string) => {
+    i18n.changeLanguage(lng);
   };
 
   return (
@@ -17,9 +25,25 @@ const Header = () => {
           <img src="/logo.png" alt="BarberFlow Logo" className="h-10 w-10" />
           <span className="text-2xl font-bold">BarberFlow</span>
         </Link>
-        <Button onClick={handleLogout} variant="secondary" className="text-primary-foreground hover:bg-primary/80">
-          Sair
-        </Button>
+        <div className="flex items-center space-x-4">
+          {/* Language Flags */}
+          <div className="flex space-x-2">
+            <button onClick={() => changeLanguage('pt')} className="focus:outline-none">
+              <img src="/Flags/BR.webp" alt="Português" className="h-6 w-auto rounded-sm" />
+            </button>
+            <button onClick={() => changeLanguage('es')} className="focus:outline-none">
+              <img src="/Flags/ES.webp" alt="Español" className="h-6 w-auto rounded-sm" />
+            </button>
+            <button onClick={() => changeLanguage('en')} className="focus:outline-none">
+              <img src="/Flags/US.webp" alt="English" className="h-6 w-auto rounded-sm" />
+            </button>
+          </div>
+          {/* Theme Toggle */}
+          <ModeToggle />
+          <Button onClick={handleLogout} variant="secondary" className="text-primary-foreground hover:bg-primary/80">
+            {t('logout_button')}
+          </Button>
+        </div>
       </div>
     </header>
   );
