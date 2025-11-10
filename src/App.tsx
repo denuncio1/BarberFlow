@@ -23,6 +23,7 @@ import History from "./pages/History"; // Import the new History page
 import ClientsPage from "./pages/ClientsPage"; // Updated import
 import TeamPage from "./pages/TeamPage"; // New import
 import ServicesPage from "./pages/ServicesPage"; // New import
+import ProductsPage from "./pages/ProductsPage"; // New import
 
 const queryClient = new QueryClient();
 
@@ -52,6 +53,7 @@ const App = () => (
                   <Route path="/registration/clients" element={<ClientsPage />} />
                   <Route path="/registration/team" element={<TeamPage />} /> {/* New route for Team */}
                   <Route path="/registration/services" element={<ServicesPage />} /> {/* New route for Services */}
+                  <Route path="/registration/products" element={<ProductsPage />} /> {/* New route for Products */}
                 </Route>
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
