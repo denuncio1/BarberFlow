@@ -1,34 +1,25 @@
 "use client";
 
 import React from 'react';
-import Header from '@/components/Header';
-import { MadeWithDyad } from '@/components/made-with-dyad';
+// Header and MadeWithDyad are now handled by the Layout component
 import { useSession } from '@/contexts/SessionContext';
-import { Navigate } from 'react-router-dom';
+// Navigate is handled by the Layout component
 
 const Appointments = () => {
-  const { session, isLoading } = useSession();
+  const { isLoading } = useSession();
 
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">Carregando...</div>;
   }
 
-  if (!session) {
-    return <Navigate to="/login" replace />;
-  }
+  // The Navigate to /login is now handled by the Layout component
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-100 dark:bg-gray-900">
-      <Header />
-      <main className="flex-grow flex items-center justify-center p-4">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold mb-4 text-gray-900 dark:text-gray-100">Agendamentos</h1>
-          <p className="text-xl text-gray-600 dark:text-gray-400">
-            Gerencie seus agendamentos aqui.
-          </p>
-        </div>
-      </main>
-      <MadeWithDyad />
+    <div className="p-4 bg-background text-foreground min-h-full">
+      <h1 className="text-3xl font-bold mb-6">Agendamentos</h1>
+      <p className="text-xl text-gray-600 dark:text-gray-400">
+        Gerencie seus agendamentos aqui. (Conteúdo futuro para o calendário de agendamentos)
+      </p>
     </div>
   );
 };

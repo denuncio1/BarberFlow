@@ -1,26 +1,25 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarDays } from 'lucide-react'; // Importar o ícone de calendário
+import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
+import { showSuccess } from '@/utils/toast';
 
 const Header = () => {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    showSuccess('Logout realizado com sucesso!');
+  };
+
   return (
     <header className="bg-primary text-primary-foreground p-4 shadow-md">
       <div className="container mx-auto flex justify-between items-center">
-        <Link to="/" className="flex items-center space-x-2">
+        <Link to="/dashboard" className="flex items-center space-x-2">
           <img src="/logo.png" alt="BarberFlow Logo" className="h-10 w-10" />
           <span className="text-2xl font-bold">BarberFlow</span>
         </Link>
-        <nav>
-          <ul className="flex space-x-4">
-            <li>
-              <Link to="/appointments" className="flex items-center space-x-1 hover:underline">
-                <CalendarDays className="h-5 w-5" />
-                <span>Agendamento</span>
-              </Link>
-            </li>
-            {/* Outros links de navegação podem ser adicionados aqui */}
-          </ul>
-        </nav>
+        <Button onClick={handleLogout} variant="secondary" className="text-primary-foreground hover:bg-primary/80">
+          Sair
+        </Button>
       </div>
     </header>
   );
