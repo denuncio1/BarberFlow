@@ -20,13 +20,14 @@ import MarketingLoyalty from "./pages/MarketingLoyalty";
 import Reports from "./pages/Reports";
 import Appointments from "./pages/Appointments";
 import History from "./pages/History"; // Import the new History page
+import ClientRegistration from "./pages/ClientRegistration"; // New import
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme"> {/* Added ThemeProvider */}
-      <I18nextProvider i18n={i18n}> {/* Added I18nextProvider */}
+    <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+      <I18nextProvider i18n={i18n}>
         <TooltipProvider>
           <Toaster />
           <Sonner />
@@ -45,6 +46,8 @@ const App = () => (
                   <Route path="/stock-control" element={<StockControl />} />
                   <Route path="/marketing-loyalty" element={<MarketingLoyalty />} />
                   <Route path="/reports" element={<Reports />} />
+                  {/* New Registration Routes */}
+                  <Route path="/registration/clients" element={<ClientRegistration />} />
                 </Route>
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />

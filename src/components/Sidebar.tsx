@@ -2,42 +2,89 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { CalendarDays, History, Users, DollarSign, Package, TrendingUp, BarChartBig, LayoutDashboard } from 'lucide-react';
+import { CalendarDays, History, Users, DollarSign, Package, TrendingUp, BarChartBig, LayoutDashboard, PlusCircle, ChevronDown } from 'lucide-react'; // Added PlusCircle and ChevronDown
 import { cn } from '@/lib/utils';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'; // Import Collapsible components
+import { useTranslation } from 'react-i18next'; // Import useTranslation
 
 const navItems = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Agendamentos', href: '/appointments', icon: CalendarDays },
-  { name: 'Histórico', href: '/history', icon: History },
-  { name: 'Gestão de Clientes', href: '/client-management', icon: Users },
-  { name: 'Financeiro', href: '/financial', icon: DollarSign },
-  { name: 'Controle de Estoque', href: '/stock-control', icon: Package },
-  { name: 'Marketing e Fidelização', href: '/marketing-loyalty', icon: TrendingUp },
-  { name: 'Relatórios', href: '/reports', icon: BarChartBig },
+  { name: 'dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'appointments', href: '/appointments', icon: CalendarDays },
+  { name: 'history', href: '/history', icon: History },
+  {
+    name: 'registration', // New main category
+    icon: PlusCircle,
+    children: [
+      { name: 'clients', href: '/registration/clients', icon: Users }, // Nested item
+      // Add other registration items here later if needed
+    ],
+  },
+  { name: 'client_management', href: '/client-management', icon: Users },
+  { name: 'financial', href: '/financial', icon: DollarSign },
+  { name: 'stock_control', href: '/stock-control', icon: Package },
+  { name: 'marketing_loyalty', href: '/marketing-loyalty', icon: TrendingUp },
+  { name: 'reports', href: '/reports', icon: BarChartBig },
 ];
 
 const Sidebar = () => {
   const location = useLocation();
+  const { t } = useTranslation();
 
   return (
     <aside className="w-64 bg-sidebar text-sidebar-foreground border-r border-sidebar-border p-4 flex flex-col">
       <nav className="flex-grow">
         <ul className="space-y-2">
           {navItems.map((item) => (
-            <li key={item.name}>
-              <Link
-                to={item.href}
-                className={cn(
-                  "flex items-center space-x-3 p-2 rounded-md transition-colors",
-                  location.pathname === item.href
-                    ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                    : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                )}
-              >
-                <item.icon className="h-5 w-5" />
-                <span>{item.name}</span>
-              </Link>
-            </li>
+            item.children ? (
+              <Collapsible key={item.name} defaultOpen={location.pathname.startsWith('/' + item.children[0].href.split('/')[1])}> {/* Open if any child is active */}
+                <CollapsibleTrigger className={cn(
+                  "flex items-center justify-between w-full space-x-3 p-2 rounded-md transition-colors",
+                  "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                  location.pathname.startsWith('/' + item.children[0].href.split('/')[1]) // Check if any child route is active
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground" // Highlight parent if child is active
+                    : ""
+                )}>
+                  <div className="flex items-center space-x-3">
+                    <item.icon className="h-5 w-5" />
+                    <span>{t(item.name)}</span>
+                  </div>
+                  <ChevronDown className="h-4 w-4 transition-transform data-[state=open]:rotate-180" />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="ml-4 mt-2 space-y-1">
+                  {item.children.map((child) => (
+                    <li key={child.name}>
+                      <Link
+                        to={child.href}
+                        className={cn(
+                          "flex items-center space-x-3 p-2 rounded-md transition-colors",
+                          location.pathname === child.href
+                            ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                            : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                        )}
+                      >
+                        <child.icon className="h-5 w-5" />
+                        <span>{t(child.name)}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </CollapsibleContent>
+              </Collapsible>
+            ) : (
+              <li key={item.name}>
+                <Link
+                  to={item.href}
+                  className={cn(
+                    "flex items-center space-x-3 p-2 rounded-md transition-colors",
+                    location.pathname === item.href
+                      ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                      : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  )}
+                >
+                  <item.icon className="h-5 w-5" />
+                  <span>{t(item.name)}</span>
+                </Link>
+              </li>
+            )
           ))}
         </ul>
       </nav>
