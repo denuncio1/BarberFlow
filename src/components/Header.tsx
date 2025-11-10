@@ -9,13 +9,13 @@ const Header = () => {
           <img src="/logo.png" alt="BarberFlow Logo" className="h-10 w-10" />
           <span className="text-2xl font-bold">BarberFlow</span>
         </Link>
+        {/* Navigation will go here later */}
         <nav>
-          <ul className="flex space-x-4">
-            <li><Link to="/aper" className="hover:underline">Módulo A.P.E.R.</Link></li>
-            {/* <li><Link to="/services" className="hover:underline">Serviços</Link></li>
+          {/* <ul className="flex space-x-4">
+            <li><Link to="/services" className="hover:underline">Serviços</Link></li>
             <li><Link to="/booking" className="hover:underline">Agendamento</Link></li>
-            <li><Link to="/contact" className="hover:underline">Contato</Link></li> */}
-          </ul>
+            <li><Link to="/contact" className="hover:underline">Contato</Link></li>
+          </ul> */}
         </nav>
       </div>
     </header>
