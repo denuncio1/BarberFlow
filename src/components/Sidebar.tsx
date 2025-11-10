@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { CalendarDays, History, Users, DollarSign, Package, TrendingUp, BarChartBig, LayoutDashboard, PlusCircle, ChevronDown, UsersRound, Scissors, Box } from 'lucide-react'; // Added Box for Products icon
+import { CalendarDays, History, Users, DollarSign, Package, TrendingUp, BarChartBig, LayoutDashboard, PlusCircle, ChevronDown, UsersRound, Scissors, Box, CreditCard } from 'lucide-react'; // Added CreditCard for Payment Methods icon
 import { cn } from '@/lib/utils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'; // Import Collapsible components
 import { useTranslation } from 'react-i18next'; // Import useTranslation
@@ -19,6 +19,7 @@ const navItems = [
       { name: 'team', href: '/registration/team', icon: UsersRound }, // New nested item for Team
       { name: 'services', href: '/registration/services', icon: Scissors }, // New nested item for Services
       { name: 'products', href: '/registration/products', icon: Box }, // New nested item for Products
+      { name: 'payment_methods', href: '/registration/payment-methods', icon: CreditCard }, // New nested item for Payment Methods
     ],
   },
   { name: 'client_management', href: '/client-management', icon: Users },
