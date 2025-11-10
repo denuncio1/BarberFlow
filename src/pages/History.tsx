@@ -16,8 +16,87 @@ interface Appointment {
   id: string;
   appointment_date: string;
   status: string;
+  clients: { first_name: string; last_name: string } | null; // Corrected to single object
+  technicians: { name: string } | null; // Corrected to single object
+  services: { name: string; price: number } | null; // Corrected to single object
+  payment_value: number;
+  points_earned: number;
+}
+
+const HistoryPage = () => {
+  const { user } = useSession();
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showCancelled, setShowCancelled] = useState(false);
+  const [filterType, setFilterType] = useState('all');
+  const [filterBarber, setFilterBarber] = useState('all');
+  const [filterCustomer, setFilterCustomer] = useState('all');
+  const [barbers, setBarbers] = useState<{ id: string; name: string }[]>([]);
+  const [customers, setCustomers] = useState<{ id: string; name: string }[]>([]);
+
+  useEffect<dyad-problem-report summary="1 problems">
+<problem file="src/pages/History.tsx" line="121" column="25" code="2352">Conversion of type '{ payment_value: any; points_earned: number; id: any; appointment_date: any; status: any; clients: { first_name: any; last_name: any; }[]; technicians: { name: any; }[]; services: { name: any; price: any; }[]; }[]' to type 'Appointment[]' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ payment_value: any; points_earned: number; id: any; appointment_date: any; status: any; clients: { first_name: any; last_name: any; }[]; technicians: { name: any; }[]; services: { name: any; price: any; }[]; }' is not comparable to type 'Appointment'.
+    Types of property 'technicians' are incompatible.
+      Property 'name' is missing in type '{ name: any; }[]' but required in type '{ name: string; }'.</problem>
+</dyad-problem-report><think>**Reviewing the Type Error**
+
+I'm seeing the same TypeScript error again, specifically about the 'name' property. It seems the `Appointment` interface still expects `technicians` to be an array of objects where `name` is a string, but the data is giving me an array of objects where `name` can be anything. This discrepancy needs to be addressed for the code to compile correctly.
+
+
+**Refining the Technician Mapping**
+
+I've re-examined the type error related to the 'name' property within the `technicians` array.  It appears the `select` query in `History.tsx` is misinterpreting the Supabase relationship. Although the schema indicates a many-to-one relationship from appointments to technicians, the query is treating the `technicians` data as an array when it should be a single object. I need to adjust the query or data mapping to reflect this.
+
+
+**Troubleshooting the Supabase Response**
+
+I'm back to the TypeScript error with `name` again. It seems the Supabase response for `technicians` is being incorrectly interpreted as an array. Although the database has a many-to-one relationship, the query isn't giving the expected single object. I'll check how the query treats joined tables.
+
+
+**Pinpointing the Supabase Response**
+
+I'm back to the TypeScript issue with the 'name' property again. The problem stems from how Supabase returns the 'technicians' data. It looks like the data is being treated as an array of objects, which doesn't match the `Appointment` interface's expectation of a single object. I need to figure out why Supabase is interpreting a many-to-one relationship this way. I think the  issue lies in how I'm handling the data after the Supabase query. The solution now seems to be casting the data appropriately, or adjusting the `Appointment` interface.
+
+
+**Addressing the Data Mapping**
+
+I'm now certain the type error stems from how Supabase returns related data. It looks like my `select` queries always return related tables (like `technicians`) as arrays, even for a many-to-one relationship. So, I need to adjust the `Appointment` interface back to expecting arrays for `clients`, `technicians`, and `services`. This aligns with the data I'm actually receiving and should resolve the type mismatch. I'll test this change to ensure the fix is consistent.
+
+
+**Adjusting the Return Type**
+
+I've re-examined the type error and noticed a pattern. The Supabase `select` query returns related tables, even those with many-to-one relationships, as arrays. Therefore, I'm now modifying the `Appointment` interface back to expecting arrays for `clients`, `technicians`, and `services`. This change should resolve the consistent type mismatches I've encountered.
+
+</think>Peço desculpas pela confusão e por não ter resolvido isso completamente na primeira tentativa. O erro indica que o TypeScript ainda está inferindo `technicians` como um array de objetos (`{ name: any; }[]`) vindo do Supabase, enquanto a interface `Appointment` espera um único objeto (`{ name: string; }`).
+
+Isso geralmente acontece quando a query `select` do Supabase, mesmo para relacionamentos de "muitos para um", retorna os dados aninhados dentro de um array. Para ser consistente com o que o Supabase provavelmente está retornando e com a correção anterior para `services`, vamos definir `clients`, `technicians` e `services` como **arrays de objetos** na interface `Appointment` e ajustar a forma como acessamos esses dados na tabela.
+
+Aqui está a correção para `src/pages/History.tsx`:
+
+<dyad-write path="src/pages/History.tsx" description="Fixing TypeScript error by consistently defining related entities as arrays in the Appointment interface and adjusting data access.">
+"use client";
+
+import React, { useState, useEffect } from 'react';
+import { CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { format, addDays, subDays } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { supabase } from '@/integrations/supabase/client';
+import { useSession } from '@/contexts/SessionContext';
+import { cn } from '@/lib/utils'; // Import 'cn' utility
+
+interface Appointment {
+  id: string;
+  appointment_date: string;
+  status: string;
   clients: { first_name: string; last_name: string }[] | null; // Changed to array
-  technicians: { name: string } | null;
+  technicians: { name: string }[] | null; // Changed to array
   services: { name: string; price: number }[] | null; // Changed to array
   payment_value: number;
   points_earned: number;
@@ -258,7 +337,7 @@ const HistoryPage = () => {
                       {format(new Date(appointment.appointment_date), 'HH:mm', { locale: ptBR })} - {format(addDays(new Date(appointment.appointment_date), 0, /* assuming 1 hour duration for now */), 'HH:mm', { locale: ptBR })}
                     </TableCell>
                     <TableCell>{appointment.clients?.[0] ? `${appointment.clients[0].first_name} ${appointment.clients[0].last_name}` : 'N/A'}</TableCell>
-                    <TableCell>{appointment.technicians?.name || 'N/A'}</TableCell>
+                    <TableCell>{appointment.technicians?.[0]?.name || 'N/A'}</TableCell>
                     <TableCell>{appointment.services?.[0]?.name || 'N/A'}</TableCell>
                     <TableCell>Pagamento pendente</TableCell> {/* Placeholder */}
                     <TableCell className="text-right">R$ {appointment.payment_value.toFixed(2).replace('.', ',')}</TableCell>
