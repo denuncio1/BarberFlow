@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { CalendarDays, History, Users, DollarSign, Package, TrendingUp, BarChartBig, LayoutDashboard, PlusCircle, ChevronDown } from 'lucide-react'; // Added PlusCircle and ChevronDown
+import { CalendarDays, History, Users, DollarSign, Package, TrendingUp, BarChartBig, LayoutDashboard, PlusCircle, ChevronDown, UsersRound } from 'lucide-react'; // Added UsersRound for Team icon
 import { cn } from '@/lib/utils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'; // Import Collapsible components
 import { useTranslation } from 'react-i18next'; // Import useTranslation
@@ -16,6 +16,7 @@ const navItems = [
     icon: PlusCircle,
     children: [
       { name: 'clients', href: '/registration/clients', icon: Users }, // Nested item
+      { name: 'team', href: '/registration/team', icon: UsersRound }, // New nested item for Team
       // Add other registration items here later if needed
     ],
   },
