@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { CalendarDays, History, Users, DollarSign, Package, TrendingUp, BarChartBig, LayoutDashboard, PlusCircle, ChevronDown, UsersRound } from 'lucide-react'; // Added UsersRound for Team icon
+import { CalendarDays, History, Users, DollarSign, Package, TrendingUp, BarChartBig, LayoutDashboard, PlusCircle, ChevronDown, UsersRound, Scissors } from 'lucide-react'; // Added Scissors for Services icon
 import { cn } from '@/lib/utils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'; // Import Collapsible components
 import { useTranslation } from 'react-i18next'; // Import useTranslation
@@ -17,6 +17,7 @@ const navItems = [
     children: [
       { name: 'clients', href: '/registration/clients', icon: Users }, // Nested item
       { name: 'team', href: '/registration/team', icon: UsersRound }, // New nested item for Team
+      { name: 'services', href: '/registration/services', icon: Scissors }, // New nested item for Services
       // Add other registration items here later if needed
     ],
   },
@@ -42,7 +43,7 @@ const Sidebar = () => {
                   "flex items-center justify-between w-full space-x-3 p-2 rounded-md transition-colors",
                   "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                   location.pathname.startsWith('/' + item.children[0].href.split('/')[1]) // Check if any child route is active
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground" // Highlight parent if child is active
+                    ? "bg-sidebar-primary text-sidebar-primary-foreground" // Highlight parent if child is active
                     : ""
                 )}>
                   <div className="flex items-center space-x-3">
