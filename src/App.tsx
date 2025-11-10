@@ -20,7 +20,7 @@ import MarketingLoyalty from "./pages/MarketingLoyalty";
 import Reports from "./pages/Reports";
 import Appointments from "./pages/Appointments";
 import History from "./pages/History"; // Import the new History page
-import ClientRegistration from "./pages/ClientRegistration"; // New import
+import ClientsPage from "./pages/ClientsPage"; // Updated import
 
 const queryClient = new QueryClient();
 
@@ -47,7 +47,7 @@ const App = () => (
                   <Route path="/marketing-loyalty" element={<MarketingLoyalty />} />
                   <Route path="/reports" element={<Reports />} />
                   {/* New Registration Routes */}
-                  <Route path="/registration/clients" element={<ClientRegistration />} />
+                  <Route path="/registration/clients" element={<ClientsPage />} /> {/* Updated to ClientsPage */}
                 </Route>
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
