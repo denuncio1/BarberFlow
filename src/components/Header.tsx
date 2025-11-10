@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { CalendarDays } from 'lucide-react'; // Importar o ícone de calendário
 
 const Header = () => {
   return (
@@ -9,13 +10,16 @@ const Header = () => {
           <img src="/logo.png" alt="BarberFlow Logo" className="h-10 w-10" />
           <span className="text-2xl font-bold">BarberFlow</span>
         </Link>
-        {/* Navigation will go here later */}
         <nav>
-          {/* <ul className="flex space-x-4">
-            <li><Link to="/services" className="hover:underline">Serviços</Link></li>
-            <li><Link to="/booking" className="hover:underline">Agendamento</Link></li>
-            <li><Link to="/contact" className="hover:underline">Contato</Link></li>
-          </ul> */}
+          <ul className="flex space-x-4">
+            <li>
+              <Link to="/appointments" className="flex items-center space-x-1 hover:underline">
+                <CalendarDays className="h-5 w-5" />
+                <span>Agendamento</span>
+              </Link>
+            </li>
+            {/* Outros links de navegação podem ser adicionados aqui */}
+          </ul>
         </nav>
       </div>
     </header>
