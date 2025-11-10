@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { format, parseISO, setHours, setMinutes, isWithinInterval, isSameDay, addDays } from 'date-fns'; // Added addDays
+import { format, parseISO, setHours, setMinutes, isSameDay, addDays } from 'date-fns'; // Removed isWithinInterval as it's not used here
 import { ptBR } from 'date-fns/locale';
 import AppointmentCard from './AppointmentCard';
 import BlockedTimeCard from './BlockedTimeCard';
@@ -18,6 +18,8 @@ interface Appointment {
   id: string;
   appointment_date: string; // ISO string
   status: string;
+  client_id: string; // Added client_id
+  technician_id: string; // Added technician_id
   clients: { first_name: string; last_name: string }[] | null;
   technicians: { name: string }[] | null; // Assuming this is the technician assigned to the appointment
   services: { name: string; price: number }[] | null;
@@ -141,7 +143,7 @@ const AppointmentCalendarGrid: React.FC<AppointmentCalendarGridProps> = ({
               {appointments
                 .filter(app =>
                   isSameDay(parseISO(app.appointment_date), selectedDate) &&
-                  app.technicians?.[0]?.name === tech.name // Assuming technician is linked by name for now, ideally by ID
+                  app.technician_id === tech.id // Changed here: filter by technician_id
                 )
                 .map(app => {
                   const { top, height } = getPositionAndHeight(app.appointment_date, format(addDays(parseISO(app.appointment_date), 0, /* assuming 1 hour duration for now */), 'yyyy-MM-dd HH:mm', { locale: ptBR })); // Placeholder for end time
