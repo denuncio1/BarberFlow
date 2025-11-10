@@ -9,12 +9,15 @@ import { useTranslation } from 'react-i18next'; // Import useTranslation
 const Header = () => {
   const { t, i18n } = useTranslation();
 
+  console.log("Current language:", i18n.language); // Log para depuração
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     showSuccess(t('logout_success'));
   };
 
   const changeLanguage = (lng: string) => {
+    console.log("Changing language to:", lng); // Log para depuração
     i18n.changeLanguage(lng);
   };
 

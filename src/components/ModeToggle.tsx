@@ -13,7 +13,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export function ModeToggle() {
-  const { setTheme } = useTheme();
+  const { setTheme, theme } = useTheme(); // Adicionado 'theme' para depuração
+
+  console.log("Current theme:", theme); // Log para depuração
 
   return (
     <DropdownMenu>
@@ -25,13 +27,13 @@ export function ModeToggle() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="bg-gray-800 text-white border-gray-700">
-        <DropdownMenuItem onClick={() => setTheme("light")} className="hover:bg-gray-700">
+        <DropdownMenuItem onClick={() => { console.log("Setting theme to light"); setTheme("light"); }} className="hover:bg-gray-700">
           Light
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("dark")} className="hover:bg-gray-700">
+        <DropdownMenuItem onClick={() => { console.log("Setting theme to dark"); setTheme("dark"); }} className="hover:bg-gray-700">
           Dark
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("system")} className="hover:bg-gray-700">
+        <DropdownMenuItem onClick={() => { console.log("Setting theme to system"); setTheme("system"); }} className="hover:bg-gray-700">
           System
         </DropdownMenuItem>
       </DropdownMenuContent>
