@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { CalendarIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns'; // Added parseISO
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
@@ -24,7 +24,7 @@ const formSchema = z.object({
   last_name: z.string().min(2, { message: "O sobrenome deve ter pelo menos 2 caracteres." }),
   email: z.string().email({ message: "Por favor, insira um e-mail válido." }).optional().or(z.literal('')),
   phone: z.string().optional().or(z.literal('')),
-  date_of_birth: z.date().optional(),
+  date_of_birth: z.string().optional().or(z.literal('')), // Changed to string
   avatar_url: z.string().url({ message: "Por favor, insira uma URL válida para o avatar." }).optional().or(z.literal('')),
   status: z.enum(['active', 'blocked']).default('active'),
 });
@@ -45,6 +45,7 @@ const ClientRegistrationForm: React.FC<ClientRegistrationFormProps> = ({ onSucce
       last_name: "",
       email: "",
       phone: "",
+      date_of_birth: "", // Default to empty string
       avatar_url: "",
       status: "active",
     },
@@ -65,7 +66,7 @@ const ClientRegistrationForm: React.FC<ClientRegistrationFormProps> = ({ onSucce
           last_name: values.last_name,
           email: values.email || null,
           phone: values.phone || null,
-          date_of_birth: values.date_of_birth ? format(values.date_of_birth, 'yyyy-MM-dd') : null,
+          date_of_birth: values.date_of_birth || null, // Send as string or null
           avatar_url: values.avatar_url || null,
           status: values.status,
         })
@@ -148,27 +149,22 @@ const ClientRegistrationForm: React.FC<ClientRegistrationFormProps> = ({ onSucce
               <Popover>
                 <PopoverTrigger asChild>
                   <FormControl>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full pl-3 text-left font-normal bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600",
-                        !field.value && "text-muted-foreground"
-                      )}
-                    >
-                      {field.value ? (
-                        format(field.value, "PPP", { locale: ptBR })
-                      ) : (
-                        <span>{t('client_registration_dob_select_placeholder')}</span>
-                      )}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
+                    <div className="relative">
+                      <Input
+                        placeholder={t('client_registration_dob_select_placeholder')}
+                        value={field.value ? format(parseISO(field.value), 'dd/MM/yyyy', { locale: ptBR }) : ''}
+                        onChange={(e) => field.onChange(e.target.value)}
+                        className="w-full pl-3 pr-10 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
+                      />
+                      <CalendarIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-50 cursor-pointer" />
+                    </div>
                   </FormControl>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700" align="start">
                   <Calendar
                     mode="single"
-                    selected={field.value}
-                    onSelect={field.onChange}
+                    selected={field.value ? parseISO(field.value) : undefined}
+                    onSelect={(date) => field.onChange(date ? format(date, 'yyyy-MM-dd') : '')} // Format to ISO string
                     disabled={(date) =>
                       date > new Date() || date < new Date("1900-01-01")
                     }
