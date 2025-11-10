@@ -5,13 +5,9 @@ import Header from './Header';
 import Sidebar from './Sidebar';
 import { MadeWithDyad } from './made-with-dyad';
 import { useSession } from '@/contexts/SessionContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Outlet } from 'react-router-dom'; // Import Outlet
 
-interface LayoutProps {
-  children: React.ReactNode;
-}
-
-const Layout: React.FC<LayoutProps> = ({ children }) => {
+const Layout: React.FC = () => { // Removed LayoutProps interface and children prop
   const { session, isLoading } = useSession();
 
   if (isLoading) {
@@ -28,7 +24,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       <div className="flex flex-grow">
         <Sidebar />
         <main className="flex-grow p-4 overflow-auto">
-          {children}
+          <Outlet /> {/* Render nested routes here */}
         </main>
       </div>
       <MadeWithDyad />
