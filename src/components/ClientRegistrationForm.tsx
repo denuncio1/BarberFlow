@@ -32,22 +32,32 @@ const formSchema = z.object({
 interface ClientRegistrationFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
+  initialData?: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string | null;
+    phone: string | null;
+    date_of_birth: string | null;
+    avatar_url: string | null;
+    status: 'active' | 'blocked';
+  } | null;
 }
 
-const ClientRegistrationForm: React.FC<ClientRegistrationFormProps> = ({ onSuccess, onCancel }) => {
+const ClientRegistrationForm: React.FC<ClientRegistrationFormProps> = ({ onSuccess, onCancel, initialData }) => {
   const { user } = useSession();
   const { t } = useTranslation();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      first_name: "",
-      last_name: "",
-      email: "",
-      phone: "",
-      date_of_birth: "", // Default to empty string
-      avatar_url: "",
-      status: "active",
+      first_name: initialData?.first_name || "",
+      last_name: initialData?.last_name || "",
+      email: initialData?.email || "",
+      phone: initialData?.phone || "",
+      date_of_birth: initialData?.date_of_birth || "",
+      avatar_url: initialData?.avatar_url || "",
+      status: initialData?.status || "active",
     },
   });
 
@@ -58,30 +68,44 @@ const ClientRegistrationForm: React.FC<ClientRegistrationFormProps> = ({ onSucce
     }
 
     try {
-      const { data, error } = await supabase
-        .from('clients')
-        .insert({
-          user_id: user.id,
-          first_name: values.first_name,
-          last_name: values.last_name,
-          email: values.email || null,
-          phone: values.phone || null,
-          date_of_birth: values.date_of_birth || null, // Send as string or null
-          avatar_url: values.avatar_url || null,
-          status: values.status,
-        })
-        .select();
+      const clientData = {
+        user_id: user.id,
+        first_name: values.first_name,
+        last_name: values.last_name,
+        email: values.email || null,
+        phone: values.phone || null,
+        date_of_birth: values.date_of_birth || null,
+        avatar_url: values.avatar_url || null,
+        status: values.status,
+      };
+
+      let result;
+      if (initialData) {
+        // Update existing client
+        result = await supabase
+          .from('clients')
+          .update(clientData)
+          .eq('id', initialData.id)
+          .eq('user_id', user.id);
+      } else {
+        // Insert new client
+        result = await supabase
+          .from('clients')
+          .insert(clientData);
+      }
+      
+      const { error } = result;
 
       if (error) {
         throw error;
       }
 
-      showSuccess(t('client_registration_success'));
-      form.reset(); // Clear the form
+      showSuccess(initialData ? t('client_update_success') : t('client_registration_success'));
+      form.reset();
       onSuccess?.();
     } catch (error: any) {
-      console.error("Erro ao cadastrar cliente:", error);
-      showError(t('client_registration_error') + error.message);
+      console.error("Erro ao salvar cliente:", error);
+      showError((initialData ? t('client_update_error') : t('client_registration_error')) + error.message);
     }
   };
 
@@ -218,7 +242,7 @@ const ClientRegistrationForm: React.FC<ClientRegistrationFormProps> = ({ onSucce
             </Button>
           )}
           <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground">
-            {t('client_registration_submit_button')}
+            {initialData ? t('client_update_submit_button') : t('client_registration_submit_button')}
           </Button>
         </div>
       </form>
