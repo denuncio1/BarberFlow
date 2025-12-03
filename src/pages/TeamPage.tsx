@@ -31,6 +31,8 @@ const TeamPage = () => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [loadingTeamMembers, setLoadingTeamMembers] = useState<boolean>(true);
   const [isAddTeamMemberDialogOpen, setIsAddTeamMemberDialogOpen] = useState<boolean>(false);
+  const [isEditTeamMemberDialogOpen, setIsEditTeamMemberDialogOpen] = useState<boolean>(false);
+  const [editingTeamMember, setEditingTeamMember] = useState<Technician | null>(null);
 
   const fetchTeamMembers = async () => {
     if (!user) return;
@@ -76,9 +78,18 @@ const TeamPage = () => {
     fetchTeamMembers(); // Refresh team member list after adding a new one
   };
 
+  const handleTeamMemberUpdated = () => {
+    setIsEditTeamMemberDialogOpen(false);
+    setEditingTeamMember(null);
+    fetchTeamMembers(); // Refresh team member list after updating
+  };
+
   const handleTeamMemberClick = (teamMemberId: string) => {
-    showSuccess(`Detalhes do membro da equipe ${teamMemberId} (em desenvolvimento)!`);
-    // Implement navigation to team member detail page later
+    const member = teamMembers.find(m => m.id === teamMemberId);
+    if (member) {
+      setEditingTeamMember(member);
+      setIsEditTeamMemberDialogOpen(true);
+    }
   };
 
   if (isLoading) {
@@ -155,6 +166,25 @@ const TeamPage = () => {
           )}
         </div>
       </div>
+
+      {/* Edit Team Member Dialog */}
+      <Dialog open={isEditTeamMemberDialogOpen} onOpenChange={setIsEditTeamMemberDialogOpen}>
+        <DialogContent className="sm:max-w-[600px] bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700">
+          <DialogHeader>
+            <DialogTitle className="text-gray-900 dark:text-gray-100">{t('edit_team_member_title')}</DialogTitle>
+          </DialogHeader>
+          {editingTeamMember && (
+            <TeamMemberRegistrationForm 
+              onSuccess={handleTeamMemberUpdated} 
+              onCancel={() => {
+                setIsEditTeamMemberDialogOpen(false);
+                setEditingTeamMember(null);
+              }}
+              initialData={editingTeamMember}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

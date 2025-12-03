@@ -35,6 +35,8 @@ const ServicesPage = () => {
   const [sortBy, setSortBy] = useState<string>('manual'); // 'manual', 'name_asc', 'name_desc', 'price_asc', 'price_desc'
   const [loadingServices, setLoadingServices] = useState<boolean>(true);
   const [isAddServiceDialogOpen, setIsAddServiceDialogOpen] = useState<boolean>(false);
+  const [isEditServiceDialogOpen, setIsEditServiceDialogOpen] = useState<boolean>(false);
+  const [editingService, setEditingService] = useState<Service | null>(null);
 
   const fetchServices = async () => {
     if (!user) return;
@@ -105,8 +107,17 @@ const ServicesPage = () => {
   };
 
   const handleServiceClick = (serviceId: string) => {
-    showSuccess(`Detalhes do serviço ${serviceId} (em desenvolvimento)!`);
-    // Implement navigation to service detail page later
+    const service = services.find(s => s.id === serviceId);
+    if (service) {
+      setEditingService(service);
+      setIsEditServiceDialogOpen(true);
+    }
+  };
+
+  const handleServiceUpdated = () => {
+    setIsEditServiceDialogOpen(false);
+    setEditingService(null);
+    fetchServices();
   };
 
   // Placeholder for reordering functionality
@@ -235,6 +246,22 @@ const ServicesPage = () => {
           </TableBody>
         </Table>
       </div>
+
+      {/* Edit Service Dialog */}
+      <Dialog open={isEditServiceDialogOpen} onOpenChange={setIsEditServiceDialogOpen}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700">
+          <DialogHeader>
+            <DialogTitle className="text-gray-900 dark:text-gray-100">Editar Serviço</DialogTitle>
+          </DialogHeader>
+          {editingService && (
+            <ServiceRegistrationForm 
+              onSuccess={handleServiceUpdated} 
+              onCancel={() => setIsEditServiceDialogOpen(false)}
+              initialData={editingService}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -12,21 +12,19 @@ interface Technician {
   id: string;
   name: string;
   avatar_url?: string;
+  color?: string;
 }
 
 interface Appointment {
   id: string;
   appointment_date: string; // ISO string
   status: string;
-  client_id: string; // Added client_id
-  technician_id: string; // Added technician_id
-  clients: { first_name: string; last_name: string }[] | null;
-  technicians: { name: string }[] | null; // Assuming this is the technician assigned to the appointment
-  services: { name: string; price: number }[] | null;
-  // Mocked data for now, will be fetched from DB later
-  phone_number?: string;
-  order_number?: string;
-  is_favorite?: boolean;
+  client_id: string;
+  technician_id: string;
+  clients: { first_name: string; last_name: string; phone?: string } | null;
+  technician: { id: string; name: string } | null;
+  services: { name: string; price: number; duration_minutes?: number } | null;
+  notes?: string;
 }
 
 interface BlockedTime {
@@ -45,6 +43,7 @@ interface AppointmentCalendarGridProps {
   blockedTimes: BlockedTime[];
   hideBlockedTimes: boolean;
   selectedBarberId: string; // 'all' or specific technician ID
+  onDeleteAppointment?: (id: string) => void;
 }
 
 const AppointmentCalendarGrid: React.FC<AppointmentCalendarGridProps> = ({
@@ -54,6 +53,7 @@ const AppointmentCalendarGrid: React.FC<AppointmentCalendarGridProps> = ({
   blockedTimes,
   hideBlockedTimes,
   selectedBarberId,
+  onDeleteAppointment,
 }) => {
   const timeSlots = [];
   const startHour = 8; // 8:00 AM
@@ -71,8 +71,8 @@ const AppointmentCalendarGrid: React.FC<AppointmentCalendarGridProps> = ({
     ? technicians
     : technicians.filter(tech => tech.id === selectedBarberId);
 
-  // Calculate the height of a 10-minute slot in pixels (e.g., 20px per 10 min)
-  const slotHeightPx = 20; // This can be adjusted for visual density
+  // Calculate the height of a 10-minute slot in pixels (e.g., 25px per 10 min)
+  const slotHeightPx = 25; // This can be adjusted for visual density
 
   const getPositionAndHeight = (startIso: string, endIso: string) => {
     const start = parseISO(startIso);
@@ -92,48 +92,49 @@ const AppointmentCalendarGrid: React.FC<AppointmentCalendarGridProps> = ({
   };
 
   return (
-    <div className="flex flex-grow overflow-auto bg-gray-900 text-gray-300 border border-gray-700 rounded-lg">
-      {/* Time Axis */}
-      <div className="w-20 flex-shrink-0 border-r border-gray-700 sticky left-0 bg-gray-900 z-10">
-        {timeSlots.map((time, index) => (
-          <div
-            key={index}
-            className="h-[20px] text-xs flex items-start justify-end pr-2" // Adjust height to match slotHeightPx
-            style={{ height: `${slotHeightPx}px` }}
-          >
-            {time.getMinutes() === 0 && (
-              <span className="mt-[-6px]">{format(time, 'HH:mm')}</span>
-            )}
+    <div className="flex flex-col flex-grow overflow-hidden bg-gray-800 text-gray-300 border border-gray-700 rounded-xl shadow-2xl">
+      {/* Technician Headers - Fixed at top */}
+      <div className="flex bg-gray-800 border-b border-gray-700 sticky top-0 z-20">
+        <div className="w-16 flex-shrink-0 border-r border-gray-700"></div>
+        {filteredTechnicians.map(tech => (
+          <div key={tech.id} className="flex-1 p-3 text-center border-r border-gray-700 last:border-r-0">
+            <Avatar className="mx-auto h-12 w-12 mb-2 ring-2 ring-gray-700">
+              <AvatarImage src={tech.avatar_url || "/placeholder.svg"} alt={tech.name} />
+              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold">
+                {tech.name.charAt(0)}
+              </AvatarFallback>
+            </Avatar>
+            <span className="font-semibold text-sm text-white">{tech.name}</span>
           </div>
         ))}
       </div>
 
-      {/* Calendar Grid */}
-      <div className="flex flex-grow">
-        {/* Technician Headers */}
-        <div className="flex w-full sticky top-0 bg-gray-900 z-20 border-b border-gray-700">
-          {filteredTechnicians.map(tech => (
-            <div key={tech.id} className="flex-1 p-2 text-center border-r border-gray-700 last:border-r-0">
-              <Avatar className="mx-auto h-10 w-10 mb-1">
-                <AvatarImage src={tech.avatar_url || "/placeholder.svg"} alt={tech.name} />
-                <AvatarFallback>{tech.name.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <span className="font-medium text-sm">{tech.name}</span>
+      {/* Scrollable Calendar Grid */}
+      <div className="flex flex-grow overflow-y-auto">
+        {/* Time Axis */}
+        <div className="w-16 flex-shrink-0 border-r border-gray-700 bg-gray-800">
+          {timeSlots.map((time, index) => (
+            <div
+              key={index}
+              className="text-xs flex items-start justify-end pr-2 text-gray-500 leading-none"
+              style={{ height: `${slotHeightPx}px` }}
+            >
+              <span className="mt-[-6px] font-medium">{format(time, 'HH:mm')}</span>
             </div>
           ))}
         </div>
 
         {/* Appointment Slots */}
-        <div className="absolute top-[60px] left-20 right-0 bottom-0 flex"> {/* Adjust top offset for header */}
+        <div className="flex flex-grow">
           {filteredTechnicians.map(tech => (
-            <div key={tech.id} className="flex-1 border-r border-gray-700 last:border-r-0 relative">
+            <div key={tech.id} className="flex-1 border-r border-gray-700 last:border-r-0 relative bg-gray-850">
               {/* Time slot lines */}
               {timeSlots.map((time, index) => (
                 <div
                   key={index}
                   className={cn(
-                    "border-b border-gray-800",
-                    time.getMinutes() === 0 ? "border-b-gray-700" : ""
+                    "border-b",
+                    time.getMinutes() === 0 ? "border-b-gray-700" : "border-b-gray-800/50"
                   )}
                   style={{ height: `${slotHeightPx}px` }}
                 />
@@ -143,21 +144,26 @@ const AppointmentCalendarGrid: React.FC<AppointmentCalendarGridProps> = ({
               {appointments
                 .filter(app =>
                   isSameDay(parseISO(app.appointment_date), selectedDate) &&
-                  app.technician_id === tech.id // Changed here: filter by technician_id
+                  app.technician_id === tech.id
                 )
                 .map(app => {
-                  const { top, height } = getPositionAndHeight(app.appointment_date, format(addDays(parseISO(app.appointment_date), 0, /* assuming 1 hour duration for now */), 'yyyy-MM-dd HH:mm', { locale: ptBR })); // Placeholder for end time
+                  const startDate = parseISO(app.appointment_date);
+                  const durationMinutes = app.services?.duration_minutes || 60; // Default to 60 minutes if not specified
+                  const endDate = new Date(startDate.getTime() + durationMinutes * 60000); // Add duration in milliseconds
+                  
+                  const { top, height } = getPositionAndHeight(app.appointment_date, endDate.toISOString());
                   return (
-                    <div key={app.id} style={{ top: `${top}px`, height: `${height}px` }}>
+                    <div key={app.id} className="absolute w-full" style={{ top: `${top}px`, height: `${height}px` }}>
                       <AppointmentCard
-                        clientName={app.clients?.[0] ? `${app.clients[0].first_name} ${app.clients[0].last_name}` : 'N/A'}
-                        serviceName={app.services?.[0]?.name || 'N/A'}
-                        startTime={format(parseISO(app.appointment_date), 'HH:mm')}
-                        endTime={format(addDays(parseISO(app.appointment_date), 0, /* assuming 1 hour duration for now */), 'HH:mm')} // Placeholder for end time
-                        phoneNumber={app.phone_number} // Assuming these fields exist or are mocked
-                        orderNumber={app.order_number}
-                        isFavorite={app.is_favorite}
+                        clientName={app.clients ? `${app.clients.first_name} ${app.clients.last_name}` : 'N/A'}
+                        serviceName={app.services?.name || 'N/A'}
+                        startTime={format(startDate, 'HH:mm')}
+                        endTime={format(endDate, 'HH:mm')}
+                        phoneNumber={app.clients?.phone}
                         status={app.status}
+                        technicianColor={tech.color}
+                        appointmentId={app.id}
+                        onDelete={onDeleteAppointment}
                       />
                     </div>
                   );
@@ -173,7 +179,7 @@ const AppointmentCalendarGrid: React.FC<AppointmentCalendarGridProps> = ({
                   .map(block => {
                     const { top, height } = getPositionAndHeight(block.start_time, block.end_time);
                     return (
-                      <div key={block.id} style={{ top: `${top}px`, height: `${height}px` }}>
+                      <div key={block.id} className="absolute w-full" style={{ top: `${top}px`, height: `${height}px` }}>
                         <BlockedTimeCard
                           reason={block.reason || 'Motivo não especificado'}
                           startTime={format(parseISO(block.start_time), 'HH:mm')}

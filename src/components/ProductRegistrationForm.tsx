@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useSession } from '@/contexts/SessionContext';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,6 +13,8 @@ import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Camera, Upload, Link, X } from 'lucide-react';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "O nome do produto deve ter pelo menos 2 caracteres." }),
@@ -33,6 +35,8 @@ interface ProductRegistrationFormProps {
 const ProductRegistrationForm: React.FC<ProductRegistrationFormProps> = ({ onSuccess, onCancel }) => {
   const { user } = useSession();
   const { t } = useTranslation();
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -47,6 +51,53 @@ const ProductRegistrationForm: React.FC<ProductRegistrationFormProps> = ({ onSuc
       image_url: "",
     },
   });
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      showError('O arquivo deve ter no máximo 5MB');
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      form.setValue('image_url', publicUrl);
+      setImagePreview(publicUrl);
+      showSuccess('Imagem enviada com sucesso!');
+    } catch (error: any) {
+      console.error('Erro ao fazer upload:', error);
+      showError('Erro ao enviar imagem: ' + error.message);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleUrlChange = (url: string) => {
+    form.setValue('image_url', url);
+    setImagePreview(url || null);
+  };
+
+  const clearImage = () => {
+    form.setValue('image_url', '');
+    setImagePreview(null);
+  };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!user) {
@@ -76,6 +127,7 @@ const ProductRegistrationForm: React.FC<ProductRegistrationFormProps> = ({ onSuc
 
       showSuccess(t('product_registration_success'));
       form.reset(); // Clear the form
+      setImagePreview(null);
       onSuccess?.();
     } catch (error: any) {
       console.error("Erro ao cadastrar produto:", error);
@@ -193,7 +245,75 @@ const ProductRegistrationForm: React.FC<ProductRegistrationFormProps> = ({ onSuc
             <FormItem>
               <FormLabel className="text-gray-900 dark:text-gray-100">{t('product_image_url_label')}</FormLabel>
               <FormControl>
-                <Input placeholder={t('product_image_url_placeholder')} {...field} className="bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600" />
+                <div className="space-y-4">
+                  <Tabs defaultValue="url" className="w-full">
+                    <TabsList className="grid w-full grid-cols-3 bg-gray-100 dark:bg-gray-800">
+                      <TabsTrigger value="url" className="flex items-center gap-2">
+                        <Link className="h-4 w-4" />
+                        URL
+                      </TabsTrigger>
+                      <TabsTrigger value="upload" className="flex items-center gap-2">
+                        <Upload className="h-4 w-4" />
+                        Upload
+                      </TabsTrigger>
+                      <TabsTrigger value="camera" className="flex items-center gap-2">
+                        <Camera className="h-4 w-4" />
+                        Câmera
+                      </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="url" className="space-y-2">
+                      <Input
+                        placeholder={t('product_image_url_placeholder')}
+                        value={field.value || ''}
+                        onChange={(e) => handleUrlChange(e.target.value)}
+                        className="bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
+                      />
+                    </TabsContent>
+
+                    <TabsContent value="upload" className="space-y-2">
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileUpload}
+                        disabled={isUploading}
+                        className="bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
+                      />
+                      {isUploading && <p className="text-sm text-gray-500">Enviando...</p>}
+                    </TabsContent>
+
+                    <TabsContent value="camera" className="space-y-2">
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        onChange={handleFileUpload}
+                        disabled={isUploading}
+                        className="bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
+                      />
+                      {isUploading && <p className="text-sm text-gray-500">Enviando...</p>}
+                    </TabsContent>
+                  </Tabs>
+
+                  {imagePreview && (
+                    <div className="relative w-32 h-32 border-2 border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-1 right-1 h-6 w-6"
+                        onClick={clearImage}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>

@@ -1,10 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import Header from '@/components/Header';
-import { MadeWithDyad } from '@/components/made-with-dyad';
 import { useSession } from '@/contexts/SessionContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,12 +23,21 @@ interface Appointment {
   // 'clients' e 'technicians' não são selecionados nesta query do Dashboard, então foram removidos da interface aqui.
 }
 
+interface TeamGoalSummary {
+  total_goals: number;
+  total_current_value: number;
+  total_max_value: number;
+  goals_count: number;
+  progress_percentage: number;
+}
+
 const Dashboard = () => {
   const { session, isLoading, user } = useSession();
+  const navigate = useNavigate();
   const [occupancyRate, setOccupancyRate] = useState<number>(0);
   const [averageTicket, setAverageTicket] = useState<number>(0);
   const [clientFrequency, setClientFrequency] = useState<number>(0);
-  const [teamGoals, setTeamGoals] = useState<number>(10000); // Mock value for team goals
+  const [teamGoalsSummary, setTeamGoalsSummary] = useState<TeamGoalSummary | null>(null);
   const [loadingMetrics, setLoadingMetrics] = useState(true);
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
     from: startOfMonth(new Date()),
@@ -104,7 +111,9 @@ const Dashboard = () => {
           appointment_date,
           status,
           client_id,
-          services (name, price)
+          technician_id,
+          signature_used,
+          service_id
         `)
         .eq('user_id', user.id)
         .gte('appointment_date', format(dateRange.from, 'yyyy-MM-dd') + 'T00:00:00.000Z')
@@ -120,9 +129,25 @@ const Dashboard = () => {
         (app) => app.status === 'completed' && isWithinInterval(parseISO(app.appointment_date), { start: dateRange.from, end: dateRange.to })
       ) || [];
 
+      // Fetch service prices for completed appointments
+      const serviceIds = completedAppointments.map(app => app.service_id).filter(Boolean);
+      let servicePrices: Record<string, number> = {};
+      
+      if (serviceIds.length > 0) {
+        const { data: servicesData } = await supabase
+          .from('services')
+          .select('id, price')
+          .in('id', serviceIds);
+        
+        servicePrices = (servicesData || []).reduce((acc: Record<string, number>, service: any) => {
+          acc[service.id] = service.price || 0;
+          return acc;
+        }, {});
+      }
+
       // Calculate Average Ticket
-      const totalRevenue = completedAppointments.reduce((sum, app) => {
-        const servicePrice = app.services?.[0]?.price || 0;
+      const totalRevenue = completedAppointments.reduce((sum, app: any) => {
+        const servicePrice = servicePrices[app.service_id] || 0;
         return sum + servicePrice;
       }, 0);
       setAverageTicket(completedAppointments.length > 0 ? totalRevenue / completedAppointments.length : 0);
@@ -136,22 +161,86 @@ const Dashboard = () => {
       const hypotheticalCapacity = 50; // This would ideally come from a more complex calculation (e.g., barbers * working hours * avg_appt_duration)
       setOccupancyRate((completedAppointments.length / hypotheticalCapacity) * 100);
 
+      // Fetch Team Goals Summary
+      await fetchTeamGoalsSummary(completedAppointments);
+
       setLoadingMetrics(false);
     };
 
     fetchMetrics();
   }, [user, dateRange]);
 
+  const fetchTeamGoalsSummary = async (appointments: any[]) => {
+    if (!user) return;
+
+    const currentMonth = dateRange.from.getMonth() + 1;
+    const currentYear = dateRange.from.getFullYear();
+
+    try {
+      // Fetch all goals for the current period
+      const { data: goalsData, error: goalsError } = await supabase
+        .from('team_goals')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('month', currentMonth)
+        .eq('year', currentYear);
+
+      if (goalsError) throw goalsError;
+
+      if (!goalsData || goalsData.length === 0) {
+        setTeamGoalsSummary(null);
+        return;
+      }
+
+      // Calculate progress for each goal
+      let totalCurrentValue = 0;
+      let totalMaxValue = 0;
+
+      for (const goal of goalsData) {
+        // Filter appointments by technician and goal type
+        const techAppointments = appointments.filter(apt => {
+          if (apt.technician_id !== goal.technician_id) return false;
+          
+          // Filter by goal type
+          if (goal.goal_type === 'services_unsigned' && apt.signature_used) return false;
+          if (goal.goal_type === 'services_signed' && !apt.signature_used) return false;
+          if (goal.goal_type === 'general_unsigned' && apt.signature_used) return false;
+          if (goal.goal_type === 'general_signed' && !apt.signature_used) return false;
+          
+          return true;
+        });
+
+        const currentValue = techAppointments.reduce((sum, apt: any) => {
+          const servicePrice = servicePrices[apt.service_id] || 0;
+          return sum + servicePrice;
+        }, 0);
+        totalCurrentValue += currentValue;
+        totalMaxValue += goal.max_expected_value;
+      }
+
+      const progressPercentage = totalMaxValue > 0 ? (totalCurrentValue / totalMaxValue) * 100 : 0;
+
+      setTeamGoalsSummary({
+        total_goals: goalsData.length,
+        total_current_value: totalCurrentValue,
+        total_max_value: totalMaxValue,
+        goals_count: goalsData.length,
+        progress_percentage: progressPercentage,
+      });
+    } catch (error) {
+      console.error('Error fetching team goals summary:', error);
+      setTeamGoalsSummary(null);
+    }
+  };
+
   const displayDateRange = `${format(dateRange.from, 'dd/MM/yyyy', { locale: ptBR })} - ${format(dateRange.to, 'dd/MM/yyyy', { locale: ptBR })}`;
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-100 dark:bg-gray-900">
-      <Header />
-      <main className="flex-grow flex flex-col p-4">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100">
-            Dashboard
-          </h1>
+    <>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100">
+          Dashboard
+        </h1>
           <div className="flex items-center space-x-2">
             <Select onValueChange={updateDateRange} defaultValue={selectedRangeOption}>
               <SelectTrigger className="w-[180px]">
@@ -211,7 +300,7 @@ const Dashboard = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card>
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/dashboard/occupancy-rate')}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Taxa de Ocupação</CardTitle>
                 <Percent className="h-4 w-4 text-muted-foreground" />
@@ -219,9 +308,19 @@ const Dashboard = () => {
               <CardContent>
                 <div className="text-2xl font-bold">{occupancyRate.toFixed(1)}%</div>
                 <p className="text-xs text-muted-foreground">Baseado em uma capacidade hipotética de 50 agendamentos.</p>
+                <Button 
+                  variant="link" 
+                  className="text-yellow-500 hover:text-yellow-600 p-0 h-auto mt-2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate('/dashboard/occupancy-rate');
+                  }}
+                >
+                  Ver análise completa →
+                </Button>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/dashboard/average-ticket')}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Ticket Médio</CardTitle>
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
@@ -229,9 +328,19 @@ const Dashboard = () => {
               <CardContent>
                 <div className="text-2xl font-bold">R$ {averageTicket.toFixed(2).replace('.', ',')}</div>
                 <p className="text-xs text-muted-foreground">Média por agendamento finalizado.</p>
+                <Button 
+                  variant="link" 
+                  className="text-yellow-500 hover:text-yellow-600 p-0 h-auto mt-2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate('/dashboard/average-ticket');
+                  }}
+                >
+                  Ver análise completa →
+                </Button>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/dashboard/client-frequency')}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Frequência de Clientes</CardTitle>
                 <Users className="h-4 w-4 text-muted-foreground" />
@@ -239,16 +348,75 @@ const Dashboard = () => {
               <CardContent>
                 <div className="text-2xl font-bold">{clientFrequency}</div>
                 <p className="text-xs text-muted-foreground">Clientes únicos no período.</p>
+                <Button 
+                  variant="link" 
+                  className="text-yellow-500 hover:text-yellow-600 p-0 h-auto mt-2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate('/dashboard/client-frequency');
+                  }}
+                >
+                  Ver análise completa →
+                </Button>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/reports/team-goals')}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Metas da Equipe</CardTitle>
                 <Target className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">R$ {teamGoals.toFixed(2).replace('.', ',')}</div>
-                <p className="text-xs text-muted-foreground">Meta de faturamento para o período.</p>
+                {teamGoalsSummary ? (
+                  <>
+                    <div className="text-2xl font-bold">
+                      R$ {teamGoalsSummary.total_current_value.toFixed(2).replace('.', ',')}
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      de R$ {teamGoalsSummary.total_max_value.toFixed(2).replace('.', ',')} 
+                      {' '}({teamGoalsSummary.progress_percentage.toFixed(1)}%)
+                    </p>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-2">
+                      <div 
+                        className={`h-2 rounded-full transition-all ${
+                          teamGoalsSummary.progress_percentage >= 100 
+                            ? 'bg-green-500' 
+                            : teamGoalsSummary.progress_percentage >= 50 
+                            ? 'bg-yellow-500' 
+                            : 'bg-red-500'
+                        }`}
+                        style={{ width: `${Math.min(teamGoalsSummary.progress_percentage, 100)}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {teamGoalsSummary.goals_count} {teamGoalsSummary.goals_count === 1 ? 'meta ativa' : 'metas ativas'}
+                    </p>
+                    <Button 
+                      variant="link" 
+                      className="text-yellow-500 hover:text-yellow-600 p-0 h-auto mt-2"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate('/reports/team-goals');
+                      }}
+                    >
+                      Ver detalhes completos →
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-2xl font-bold text-gray-400">--</div>
+                    <p className="text-xs text-muted-foreground mb-2">Nenhuma meta cadastrada</p>
+                    <Button 
+                      variant="link" 
+                      className="text-yellow-500 hover:text-yellow-600 p-0 h-auto mt-2"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate('/reports/team-goals');
+                      }}
+                    >
+                      Criar metas →
+                    </Button>
+                  </>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -259,9 +427,7 @@ const Dashboard = () => {
             Sair
           </Button>
         </div>
-      </main>
-      <MadeWithDyad />
-    </div>
+    </>
   );
 };
 

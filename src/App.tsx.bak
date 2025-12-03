@@ -1,0 +1,116 @@
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { SessionContextProvider } from "@/contexts/SessionContext";
+import Layout from "@/components/Layout"; // Import the new Layout component
+import { ThemeProvider } from "@/components/theme-provider"; // Import ThemeProvider
+import { I18nextProvider } from "react-i18next"; // Import I18nextProvider
+import i18n from "./i18n"; // Import i18n configuration
+
+import Index from "./pages/Index";
+import NotFound from "./pages/NotFound";
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import ClientManagement from "./pages/ClientManagement";
+import Financial from "./pages/Financial";
+import StockControl from "./pages/StockControl";
+import MarketingLoyalty from "./pages/MarketingLoyalty";
+import Reports from "./pages/Reports";
+import Appointments from "./pages/Appointments";
+import History from "./pages/History"; // Import the new History page
+import ClientsPage from "./pages/ClientsPage"; // Updated import
+import TeamPage from "./pages/TeamPage"; // New import
+import ServicesPage from "./pages/ServicesPage"; // New import
+import ProductsPage from "./pages/ProductsPage"; // New import
+import PaymentMethodsPage from "./pages/PaymentMethodsPage"; // New import
+import BlockedTimesPage from "./pages/BlockedTimesPage"; // New import
+import ServicePackageRegistration from "./pages/ServicePackageRegistration"; // New import for Service Package Registration
+import ServicePackageSales from "./pages/ServicePackageSales"; // New import for Service Package Sales
+import SubscribersSummary from "./pages/SubscribersSummary"; // New import for Subscribers Summary
+import RevenueExtract from "./pages/RevenueExtract"; // New import for Revenue Extract
+import ProjectedInvoices from "./pages/ProjectedInvoices"; // New import for Projected Invoices
+import SubscriptionManagement from "./pages/SubscriptionManagement"; // New import for Subscription Management
+import SubscriptionPlans from "./pages/SubscriptionPlans"; // New import for Subscription Plans
+import BalanceWithdrawal from "./pages/BalanceWithdrawal"; // New import for Balance and Withdrawal
+import ChargebackRequests from "./pages/ChargebackRequests"; // New import for Chargeback Requests
+import StockMovements from "./pages/StockMovements"; // New import for Stock Movements
+import RealTimeInventory from "./pages/RealTimeInventory"; // New import for Real-Time Inventory
+import PurchaseOrders from "./pages/PurchaseOrders"; // New import for Purchase Orders
+import ReplenishmentAlerts from "./pages/ReplenishmentAlerts"; // New import for Replenishment Alerts
+import StockReports from "./pages/StockReports"; // New import for Stock Reports
+import BatchValidity from "./pages/BatchValidity"; // New import for Batch Validity
+import MultipleLocations from "./pages/MultipleLocations"; // New import for Multiple Locations
+import FinancialDashboard from "./pages/FinancialDashboard"; // New import for Financial Dashboard
+import AccountsPayable from "./pages/AccountsPayable"; // New import for Accounts Payable
+import AccountsReceivable from "./pages/AccountsReceivable"; // New import for Accounts Receivable
+import CashFlow from "./pages/CashFlow"; // New import for Cash Flow
+
+const queryClient = new QueryClient();
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+      <I18nextProvider i18n={i18n}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <SessionContextProvider>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/login" element={<Login />} />
+                {/* Rotas autenticadas usam o Layout */}
+                <Route element={<Layout />}>
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/appointments" element={<Appointments />} />
+                  <Route path="/history" element={<History />} /> {/* New route for History */}
+                  <Route path="/client-management" element={<ClientManagement />} />
+                  <Route path="/financial" element={<Financial />} />
+                  <Route path="/stock-control" element={<StockControl />} />
+                  <Route path="/marketing-loyalty" element={<MarketingLoyalty />} />
+                  <Route path="/reports" element={<Reports />} />
+                  {/* New Registration Routes */}
+                  <Route path="/registration/clients" element={<ClientsPage />} />
+                  <Route path="/registration/team" element={<TeamPage />} /> {/* New route for Team */}
+                  <Route path="/registration/services" element={<ServicesPage />} /> {/* New route for Services */}
+                  <Route path="/registration/products" element={<ProductsPage />} /> {/* New route for Products */}
+                  <Route path="/registration/payment-methods" element={<PaymentMethodsPage />} /> {/* New route for Payment Methods */}
+                  <Route path="/registration/blocked-times" element={<BlockedTimesPage />} /> {/* New route for Blocked Times */}
+                  <Route path="/registration/service-packages/registration" element={<ServicePackageRegistration />} /> {/* New route for Service Package Registration */}
+                  <Route path="/registration/service-packages/sales" element={<ServicePackageSales />} /> {/* New route for Service Package Sales */}
+                  {/* Subscription Club Routes */}
+                  <Route path="/subscription-club/subscribers" element={<SubscribersSummary />} /> {/* New route for Subscribers Summary */}
+                  <Route path="/subscription-club/revenue" element={<RevenueExtract />} /> {/* New route for Revenue Extract */}
+                  <Route path="/subscription-club/invoices" element={<ProjectedInvoices />} /> {/* New route for Projected Invoices */}
+                  <Route path="/subscription-club/management" element={<SubscriptionManagement />} /> {/* New route for Subscription Management */}
+                  <Route path="/subscription-club/plans" element={<SubscriptionPlans />} /> {/* New route for Subscription Plans */}
+                  <Route path="/subscription-club/balance" element={<BalanceWithdrawal />} /> {/* New route for Balance and Withdrawal */}
+                  <Route path="/subscription-club/chargebacks" element={<ChargebackRequests />} /> {/* New route for Chargeback Requests */
+                  {/* Stock Control Routes */}
+                  <Route path="/stock-control/movements" element={<StockMovements />} /> {/* New route for Stock Movements */}
+                  <Route path="/stock-control/inventory" element={<RealTimeInventory />} /> {/* New route for Real-Time Inventory */}
+                  <Route path="/stock-control/purchase-orders" element={<PurchaseOrders />} /> {/* New route for Purchase Orders */}
+                  <Route path="/stock-control/alerts" element={<ReplenishmentAlerts />} /> {/* New route for Replenishment Alerts */}
+                  <Route path="/stock-control/reports" element={<StockReports />} /> {/* New route for Stock Reports */}
+                  <Route path="/stock-control/batch-validity" element={<BatchValidity />} /> {/* New route for Batch Validity */}
+                  <Route path="/stock-control/locations" element={<MultipleLocations />} /> {/* New route for Multiple Locations */}
+                  {/* Financial Routes */}
+                  <Route path="/financial/dashboard" element={<FinancialDashboard />} /> {/* New route for Financial Dashboard */}
+                  <Route path="/financial/accounts-payable" element={<AccountsPayable />} /> {/* New route for Accounts Payable */}
+                  <Route path="/financial/accounts-receivable" element={<AccountsReceivable />} /> {/* New route for Accounts Receivable */}
+                  <Route path="/financial/cash-flow" element={<CashFlow />} /> {/* New route for Cash Flow */}
+                </Route>
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </SessionContextProvider>
+          </BrowserRouter>
+        </TooltipProvider>
+      </I18nextProvider>
+    </ThemeProvider>
+  </QueryClientProvider>
+);
+
+export default App;

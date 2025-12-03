@@ -27,6 +27,7 @@ const PaymentMethodsPage = () => {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [loadingPaymentMethods, setLoadingPaymentMethods] = useState<boolean>(true);
   const [isAddPaymentMethodDialogOpen, setIsAddPaymentMethodDialogOpen] = useState<boolean>(false);
+  const [editingPaymentMethod, setEditingPaymentMethod] = useState<PaymentMethod | null>(null);
 
   const fetchPaymentMethods = async () => {
     if (!user) return;
@@ -58,12 +59,16 @@ const PaymentMethodsPage = () => {
 
   const handlePaymentMethodAdded = () => {
     setIsAddPaymentMethodDialogOpen(false);
+    setEditingPaymentMethod(null);
     fetchPaymentMethods(); // Refresh list after adding a new method
   };
 
   const handlePaymentMethodClick = (paymentMethodId: string) => {
-    showSuccess(`Detalhes da forma de pagamento ${paymentMethodId} (em desenvolvimento)!`);
-    // Implement navigation to detail page later
+    const method = paymentMethods.find(pm => pm.id === paymentMethodId);
+    if (method) {
+      setEditingPaymentMethod(method);
+      setIsAddPaymentMethodDialogOpen(true);
+    }
   };
 
   if (isLoading) {
@@ -87,9 +92,18 @@ const PaymentMethodsPage = () => {
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px] bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700">
               <DialogHeader>
-                <DialogTitle className="text-gray-900 dark:text-gray-100">{t('payment_method_registration_title')}</DialogTitle>
+                <DialogTitle className="text-gray-900 dark:text-gray-100">
+                  {editingPaymentMethod ? t('payment_method_edit_title') || 'Editar Forma de Pagamento' : t('payment_method_registration_title')}
+                </DialogTitle>
               </DialogHeader>
-              <PaymentMethodRegistrationForm onSuccess={handlePaymentMethodAdded} onCancel={() => setIsAddPaymentMethodDialogOpen(false)} />
+              <PaymentMethodRegistrationForm 
+                onSuccess={handlePaymentMethodAdded} 
+                onCancel={() => {
+                  setIsAddPaymentMethodDialogOpen(false);
+                  setEditingPaymentMethod(null);
+                }} 
+                editingPaymentMethod={editingPaymentMethod}
+              />
             </DialogContent>
           </Dialog>
         </div>

@@ -16,9 +16,12 @@ interface Appointment {
   id: string;
   appointment_date: string;
   status: string;
-  clients: { first_name: string; last_name: string }[] | null; // Corrigido para array
-  technicians: { name: string }[] | null; // Corrigido para array
-  services: { name: string; price: number }[] | null; // Corrigido para array
+  client_id: string;
+  technician_id: string;
+  service_id: string;
+  clients: { first_name: string; last_name: string } | null;
+  technician: { name: string } | null;
+  services: { name: string; price: number } | null;
   payment_value: number;
   points_earned: number;
 }
@@ -79,9 +82,12 @@ const HistoryPage = () => {
           id,
           appointment_date,
           status,
-          clients (first_name, last_name),
-          technicians (name),
-          services (name, price)
+          client_id,
+          technician_id,
+          service_id,
+          clients!appointments_client_id_fkey(first_name, last_name),
+          technician:technicians!appointments_technician_id_fkey(name),
+          services!appointments_service_id_fkey(name, price)
         `)
         .eq('user_id', user.id)
         .gte('appointment_date', format(selectedDate, 'yyyy-MM-dd') + 'T00:00:00.000Z')
@@ -115,8 +121,8 @@ const HistoryPage = () => {
         // Mock payment_value and points_earned for now, as they are not in the current schema
         const appointmentsWithMockData = data?.map(app => ({
           ...app,
-          payment_value: app.services?.[0]?.price || 0, // Acessa a propriedade 'price' do primeiro serviço no array
-          points_earned: app.status === 'finalized' ? 60 : (app.status === 'no-show' ? 40 : 0), // Example logic
+          payment_value: app.services?.price || 0,
+          points_earned: app.status === 'completed' ? 60 : (app.status === 'no-show' ? 40 : 0),
         })) || [];
         setAppointments(appointmentsWithMockData as Appointment[]);
       }
@@ -136,7 +142,7 @@ const HistoryPage = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'finalized':
+      case 'completed':
         return 'text-green-500';
       case 'no-show':
         return 'text-yellow-500';
@@ -144,6 +150,8 @@ const HistoryPage = () => {
         return 'text-orange-500';
       case 'cancelled':
         return 'text-red-500';
+      case 'scheduled':
+        return 'text-blue-500';
       default:
         return 'text-gray-500';
     }
@@ -178,8 +186,8 @@ const HistoryPage = () => {
         </div>
 
         <Select onValueChange={setFilterType} defaultValue="all">
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Tipo: Todos os Agendamentos" />
+          <SelectTrigger className="w-[220px]">
+            <SelectValue placeholder="Type: Todos os Agendamentos" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os Agendamentos</SelectItem>
@@ -192,11 +200,11 @@ const HistoryPage = () => {
         </Select>
 
         <Select onValueChange={setFilterBarber} defaultValue="all">
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Barbeiro: Todos" />
+          <SelectTrigger className="w-[220px]">
+            <SelectValue placeholder="Barber: Todos" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos</SelectItem>
+            <SelectItem value="all">Todos os Barbeiros</SelectItem>
             {barbers.map(barber => (
               <SelectItem key={barber.id} value={barber.id}>{barber.name}</SelectItem>
             ))}
@@ -204,11 +212,11 @@ const HistoryPage = () => {
         </Select>
 
         <Select onValueChange={setFilterCustomer} defaultValue="all">
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Cliente: Todos" />
+          <SelectTrigger className="w-[220px]">
+            <SelectValue placeholder="Customer: Todos" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos</SelectItem>
+            <SelectItem value="all">Todos os Clientes</SelectItem>
             {customers.map(customer => (
               <SelectItem key={customer.id} value={customer.id}>{customer.name}</SelectItem>
             ))}
@@ -255,12 +263,12 @@ const HistoryPage = () => {
                 appointments.map((appointment) => (
                   <TableRow key={appointment.id}>
                     <TableCell className="font-medium">
-                      {format(new Date(appointment.appointment_date), 'HH:mm', { locale: ptBR })} - {format(addDays(new Date(appointment.appointment_date), 0, /* assuming 1 hour duration for now */), 'HH:mm', { locale: ptBR })}
+                      {format(new Date(appointment.appointment_date), 'HH:mm', { locale: ptBR })} - {format(new Date(new Date(appointment.appointment_date).getTime() + 60 * 60 * 1000), 'HH:mm', { locale: ptBR })}
                     </TableCell>
-                    <TableCell>{appointment.clients?.[0] ? `${appointment.clients[0].first_name} ${appointment.clients[0].last_name}` : 'N/A'}</TableCell>
-                    <TableCell>{appointment.technicians?.[0]?.name || 'N/A'}</TableCell>
-                    <TableCell>{appointment.services?.[0]?.name || 'N/A'}</TableCell>
-                    <TableCell>Pagamento pendente</TableCell> {/* Placeholder */}
+                    <TableCell>{appointment.clients ? `${appointment.clients.first_name} ${appointment.clients.last_name}` : 'N/A'}</TableCell>
+                    <TableCell>{appointment.technician?.name || 'N/A'}</TableCell>
+                    <TableCell>{appointment.services?.name || 'N/A'}</TableCell>
+                    <TableCell>Pagamento pel...</TableCell>
                     <TableCell className="text-right">R$ {appointment.payment_value.toFixed(2).replace('.', ',')}</TableCell>
                     <TableCell className="text-right">{appointment.points_earned}</TableCell>
                     <TableCell className={cn("text-center font-medium", getStatusColor(appointment.status))}>

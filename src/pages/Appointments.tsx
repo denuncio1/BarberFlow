@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useSession } from '@/contexts/SessionContext';
 import { supabase } from '@/integrations/supabase/client';
 import { format, startOfDay, addDays } from 'date-fns';
@@ -12,6 +13,9 @@ import { RefreshCcw, Phone } from 'lucide-react'; // Import Phone icon
 import { Button } from '@/components/ui/button';
 import { showSuccess, showError } from '@/utils/toast';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'; // Import Tooltip components
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import BlockedTimeRegistrationForm from '@/components/BlockedTimeRegistrationForm';
+import AppointmentRegistrationForm from '@/components/AppointmentRegistrationForm';
 
 // Interfaces for data fetched from Supabase
 interface Technician {
@@ -23,11 +27,13 @@ interface Technician {
 interface Client {
   first_name: string;
   last_name: string;
+  phone?: string;
 }
 
 interface Service {
   name: string;
   price: number;
+  duration_minutes?: number;
 }
 
 interface Appointment {
@@ -37,13 +43,10 @@ interface Appointment {
   client_id: string;
   technician_id: string;
   service_id: string;
-  clients: Client[] | null; // Corrected to array
-  technicians: Technician[] | null; // Corrected to array
-  services: Service[] | null; // Corrected to array
-  // Add any other fields needed for the card, e.g., phone_number, order_number, is_favorite
-  phone_number?: string;
-  order_number?: string;
-  is_favorite?: boolean;
+  clients: Client | null;
+  technician: Technician | null;
+  services: Service | null;
+  notes?: string;
 }
 
 interface BlockedTime {
@@ -56,6 +59,7 @@ interface BlockedTime {
 }
 
 const Appointments = () => {
+  const navigate = useNavigate();
   const { user, isLoading: isSessionLoading } = useSession();
   const [selectedDate, setSelectedDate] = useState<Date>(startOfDay(new Date()));
   const [technicians, setTechnicians] = useState<Technician[]>([]);
@@ -65,6 +69,8 @@ const Appointments = () => {
   const [hideBlockedTimes, setHideBlockedTimes] = useState<boolean>(false);
   const [loadingData, setLoadingData] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [isBlockTimeDialogOpen, setIsBlockTimeDialogOpen] = useState<boolean>(false);
+  const [isNewAppointmentDialogOpen, setIsNewAppointmentDialogOpen] = useState<boolean>(false);
 
   const fetchAppointmentsData = async () => {
     if (!user) return;
@@ -78,13 +84,13 @@ const Appointments = () => {
       // Fetch Technicians
       const { data: techniciansData, error: techError } = await supabase
         .from('technicians')
-        .select('id, name, avatar_url')
+        .select('id, name, avatar_url, color')
         .eq('user_id', user.id);
 
       if (techError) throw techError;
       setTechnicians(techniciansData || []);
 
-      // Fetch Appointments for the selected date
+      // Fetch Appointments for the selected date with service details
       const { data: appointmentsData, error: apptError } = await supabase
         .from('appointments')
         .select(`
@@ -94,9 +100,11 @@ const Appointments = () => {
           client_id,
           technician_id,
           service_id,
-          clients (first_name, last_name),
-          technicians (id, name),
-          services (name, price)
+          notes,
+          user_id,
+          clients!appointments_client_id_fkey(first_name, last_name, phone),
+          services!appointments_service_id_fkey(name, price, duration_minutes),
+          technician:technicians!appointments_technician_id_fkey(id, name)
         `)
         .eq('user_id', user.id)
         .gte('appointment_date', formattedDate + 'T00:00:00.000Z')
@@ -105,16 +113,46 @@ const Appointments = () => {
       if (apptError) throw apptError;
       setAppointments(appointmentsData || []);
 
-      // Fetch Blocked Times for the selected date
+      // Fetch Blocked Times for the selected date (non-recurring)
       const { data: blockedTimesData, error: blockedError } = await supabase
         .from('blocked_times')
         .select('id, technician_id, start_time, end_time, reason, is_recurring')
         .eq('user_id', user.id)
+        .eq('is_recurring', false)
         .gte('start_time', formattedDate + 'T00:00:00.000Z')
         .lt('start_time', format(addDays(selectedDate, 1), 'yyyy-MM-dd') + 'T00:00:00.000Z');
 
       if (blockedError) throw blockedError;
-      setBlockedTimes(blockedTimesData || []);
+
+      // Fetch Recurring Blocked Times
+      const { data: recurringBlockedData, error: recurringError } = await supabase
+        .from('blocked_times')
+        .select('id, technician_id, start_time, end_time, reason, is_recurring')
+        .eq('user_id', user.id)
+        .eq('is_recurring', true);
+
+      if (recurringError) throw recurringError;
+
+      // Apply recurring blocks to the selected date
+      const recurringBlocksForToday = (recurringBlockedData || []).map(block => {
+        const originalStart = new Date(block.start_time);
+        const originalEnd = new Date(block.end_time);
+        
+        // Create new dates with selected date but original time
+        const newStart = new Date(selectedDate);
+        newStart.setHours(originalStart.getHours(), originalStart.getMinutes(), 0, 0);
+        
+        const newEnd = new Date(selectedDate);
+        newEnd.setHours(originalEnd.getHours(), originalEnd.getMinutes(), 0, 0);
+
+        return {
+          ...block,
+          start_time: newStart.toISOString(),
+          end_time: newEnd.toISOString(),
+        };
+      });
+
+      setBlockedTimes([...(blockedTimesData || []), ...recurringBlocksForToday]);
 
     } catch (err: any) {
       console.error('Error fetching appointments data:', err);
@@ -122,6 +160,59 @@ const Appointments = () => {
       setError(err.message);
     } finally {
       setLoadingData(false);
+    }
+  };
+
+  const handleBlockTime = () => {
+    setIsBlockTimeDialogOpen(true);
+  };
+
+  const handleNewProductSale = () => {
+    navigate('/sales');
+  };
+
+  const handleNewAppointment = () => {
+    setIsNewAppointmentDialogOpen(true);
+  };
+
+  const handleOtherAction = (action: string) => {
+    if (action === 'bulk_appointment') {
+      showSuccess('Funcionalidade "Agendamento avulso clube" em desenvolvimento!');
+    } else if (action === 'recurring_appointment') {
+      showSuccess('Funcionalidade "Agendamento recorrente" em desenvolvimento!');
+    } else {
+      showSuccess(`Ação "${action}" em desenvolvimento!`);
+    }
+  };
+
+  const handleCallClient = () => {
+    showSuccess('Funcionalidade "Ver/Ligar para Cliente" em desenvolvimento!');
+  };
+
+  const handleBlockTimeSuccess = () => {
+    setIsBlockTimeDialogOpen(false);
+    fetchAppointmentsData();
+  };
+
+  const handleNewAppointmentSuccess = () => {
+    setIsNewAppointmentDialogOpen(false);
+    fetchAppointmentsData();
+  };
+
+  const handleDeleteAppointment = async (appointmentId: string) => {
+    try {
+      const { error } = await supabase
+        .from('appointments')
+        .delete()
+        .eq('id', appointmentId);
+
+      if (error) throw error;
+      
+      showSuccess('Agendamento cancelado com sucesso!');
+      fetchAppointmentsData();
+    } catch (error: any) {
+      console.error('Erro ao cancelar agendamento:', error);
+      showError('Erro ao cancelar agendamento: ' + error.message);
     }
   };
 
@@ -135,43 +226,12 @@ const Appointments = () => {
     return <div className="min-h-screen flex items-center justify-center bg-gray-900 text-gray-100">Carregando agendamentos...</div>;
   }
 
-  const handleBlockTime = () => {
-    showSuccess('Funcionalidade "Bloquear horário" em desenvolvimento!');
-  };
-
-  const handleNewProductSale = () => {
-    showSuccess('Funcionalidade "Nova venda de produtos" em desenvolvimento!');
-  };
-
-  const handleNewAppointment = () => {
-    showSuccess('Funcionalidade "Novo agendamento" em desenvolvimento!');
-  };
-
-  const handleOtherAction = (action: string) => {
-    showSuccess(`Ação "${action}" em desenvolvimento!`);
-  };
-
-  const handleCallClient = () => {
-    showSuccess('Funcionalidade "Ver/Ligar para Cliente" em desenvolvimento!');
-  };
-
   return (
-    <div className="flex flex-col h-full bg-gray-900 text-gray-100 p-4">
-      <h1 className="text-3xl font-bold mb-6">Agendamentos</h1>
+    <div className="flex flex-col h-full bg-gray-900 text-gray-100 p-6">
+      <h1 className="text-4xl font-bold mb-8 text-white">Agendamentos</h1>
 
       {/* Top Control Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-        <CalendarNavigation selectedDate={selectedDate} onDateChange={setSelectedDate} />
-        <AppointmentFilters
-          barbers={technicians}
-          selectedBarber={selectedBarberId}
-          onBarberChange={setSelectedBarberId}
-          hideBlockedTimes={hideBlockedTimes}
-          onHideBlockedTimesChange={setHideBlockedTimes}
-        />
-        <Button variant="outline" onClick={fetchAppointmentsData} className="bg-gray-800 text-white hover:bg-gray-700 border-gray-600">
-          <RefreshCcw className="h-4 w-4 mr-2" /> Atualizar
-        </Button>
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6 relative z-10">
         <AppointmentActions
           onBlockTime={handleBlockTime}
           onNewProductSale={handleNewProductSale}
@@ -180,7 +240,7 @@ const Appointments = () => {
         />
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="outline" onClick={handleCallClient} className="bg-gray-800 text-yellow-500 hover:bg-gray-700 border-yellow-500">
+            <Button variant="outline" onClick={handleCallClient} className="bg-transparent text-yellow-400 hover:bg-yellow-500/10 border-yellow-500">
               <Phone className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
@@ -188,6 +248,21 @@ const Appointments = () => {
             <p>Ver/Ligar para Cliente</p>
           </TooltipContent>
         </Tooltip>
+      </div>
+
+      {/* Filters Bar */}
+      <div className="flex flex-wrap items-center gap-4 mb-6 relative z-10">
+        <CalendarNavigation selectedDate={selectedDate} onDateChange={setSelectedDate} />
+        <AppointmentFilters
+          barbers={technicians}
+          selectedBarber={selectedBarberId}
+          onBarberChange={setSelectedBarberId}
+          hideBlockedTimes={hideBlockedTimes}
+          onHideBlockedTimesChange={setHideBlockedTimes}
+        />
+        <Button variant="outline" onClick={fetchAppointmentsData} className="bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 border-blue-500/50">
+          <RefreshCcw className="h-4 w-4 mr-2" /> Atualizar
+        </Button>
       </div>
 
       {/* Main Calendar Grid */}
@@ -203,8 +278,38 @@ const Appointments = () => {
           blockedTimes={blockedTimes}
           hideBlockedTimes={hideBlockedTimes}
           selectedBarberId={selectedBarberId}
+          onDeleteAppointment={handleDeleteAppointment}
         />
       )}
+
+      {/* Block Time Dialog */}
+      <Dialog open={isBlockTimeDialogOpen} onOpenChange={setIsBlockTimeDialogOpen}>
+        <DialogContent className="sm:max-w-[600px] bg-gray-800 text-gray-100 border-gray-700">
+          <DialogHeader>
+            <DialogTitle className="text-gray-100">Bloquear Horário</DialogTitle>
+          </DialogHeader>
+          <BlockedTimeRegistrationForm 
+            onSuccess={handleBlockTimeSuccess} 
+            onCancel={() => setIsBlockTimeDialogOpen(false)}
+            technicians={technicians}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* New Appointment Dialog */}
+      <Dialog open={isNewAppointmentDialogOpen} onOpenChange={setIsNewAppointmentDialogOpen}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto bg-gray-800 text-gray-100 border-gray-700">
+          <DialogHeader>
+            <DialogTitle className="text-gray-100">Novo Agendamento</DialogTitle>
+          </DialogHeader>
+          <AppointmentRegistrationForm 
+            onSuccess={handleNewAppointmentSuccess} 
+            onCancel={() => setIsNewAppointmentDialogOpen(false)}
+            technicians={technicians}
+            selectedDate={selectedDate}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

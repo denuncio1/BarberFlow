@@ -28,22 +28,32 @@ const formSchema = z.object({
 interface ServiceRegistrationFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
+  initialData?: {
+    id: string;
+    name: string;
+    description?: string | null;
+    price: number;
+    duration_minutes: number;
+    is_visible_to_clients: boolean;
+    type: string;
+    category: string;
+  };
 }
 
-const ServiceRegistrationForm: React.FC<ServiceRegistrationFormProps> = ({ onSuccess, onCancel }) => {
+const ServiceRegistrationForm: React.FC<ServiceRegistrationFormProps> = ({ onSuccess, onCancel, initialData }) => {
   const { user } = useSession();
   const { t } = useTranslation();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
-      description: "",
-      price: 0,
-      duration_minutes: 30,
-      is_visible_to_clients: true,
-      type: "Normal",
-      category: "Other",
+      name: initialData?.name || "",
+      description: initialData?.description || "",
+      price: initialData?.price || 0,
+      duration_minutes: initialData?.duration_minutes || 30,
+      is_visible_to_clients: initialData?.is_visible_to_clients ?? true,
+      type: (initialData?.type as 'Normal' | 'Subscription') || "Normal",
+      category: (initialData?.category as 'Haircut' | 'Beard' | 'Finish' | 'Other') || "Other",
     },
   });
 
@@ -54,30 +64,44 @@ const ServiceRegistrationForm: React.FC<ServiceRegistrationFormProps> = ({ onSuc
     }
 
     try {
-      const { data, error } = await supabase
-        .from('services')
-        .insert({
-          user_id: user.id,
-          name: values.name,
-          description: values.description || null,
-          price: values.price,
-          duration_minutes: values.duration_minutes,
-          is_visible_to_clients: values.is_visible_to_clients,
-          type: values.type,
-          category: values.category,
-        })
-        .select();
+      const serviceData = {
+        name: values.name,
+        description: values.description || null,
+        price: values.price,
+        duration_minutes: values.duration_minutes,
+        is_visible_to_clients: values.is_visible_to_clients,
+        type: values.type,
+        category: values.category,
+      };
 
-      if (error) {
-        throw error;
+      if (initialData) {
+        // Update existing service
+        const { error } = await supabase
+          .from('services')
+          .update(serviceData)
+          .eq('id', initialData.id)
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+        showSuccess('Serviço atualizado com sucesso!');
+      } else {
+        // Insert new service
+        const { error } = await supabase
+          .from('services')
+          .insert({
+            user_id: user.id,
+            ...serviceData,
+          });
+
+        if (error) throw error;
+        showSuccess(t('service_registration_success'));
+        form.reset();
       }
 
-      showSuccess(t('service_registration_success'));
-      form.reset(); // Clear the form
       onSuccess?.();
     } catch (error: any) {
-      console.error("Erro ao cadastrar serviço:", error);
-      showError(t('service_registration_error') + error.message);
+      console.error("Erro ao salvar serviço:", error);
+      showError((initialData ? 'Erro ao atualizar serviço: ' : t('service_registration_error')) + error.message);
     }
   };
 

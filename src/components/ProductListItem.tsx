@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { ChevronRight } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { TableRow, TableCell } from '@/components/ui/table';
 import { useTranslation } from 'react-i18next';
 
 interface ProductListItemProps {
@@ -34,22 +34,20 @@ const ProductListItem: React.FC<ProductListItemProps> = ({
   const displayType = type || t('not_informed');
 
   return (
-    <div
-      className="flex items-center justify-between p-4 bg-gray-800 rounded-lg shadow-sm hover:bg-gray-700 transition-colors cursor-pointer"
+    <TableRow 
+      className="cursor-pointer hover:bg-gray-700 transition-colors"
       onClick={() => onClick?.(id)}
     >
-      <div className="flex items-center space-x-4 flex-grow">
-        <div className="flex-grow grid grid-cols-6 gap-2 items-center">
-          <p className="font-semibold text-gray-100">{name}</p>
-          <p className="text-gray-300">{formattedSalePrice}</p>
-          <p className="text-gray-300">{formattedCostPrice}</p>
-          <p className="text-gray-300">{displayProducer}</p>
-          <p className="text-gray-300">{displayType}</p>
-          <p className="text-gray-300">{stock_quantity}</p>
-        </div>
-      </div>
-      <ChevronRight className="h-5 w-5 text-gray-400 ml-4" />
-    </div>
+      <TableCell className="font-semibold text-gray-100">{name}</TableCell>
+      <TableCell className="text-gray-300">{formattedSalePrice}</TableCell>
+      <TableCell className="text-gray-300">{formattedCostPrice}</TableCell>
+      <TableCell className="text-gray-300">{displayProducer}</TableCell>
+      <TableCell className="text-gray-300">{displayType}</TableCell>
+      <TableCell className="text-gray-300">{stock_quantity}</TableCell>
+      <TableCell className="text-right">
+        <ChevronRight className="h-5 w-5 text-gray-400 inline-block" />
+      </TableCell>
+    </TableRow>
   );
 };
 
