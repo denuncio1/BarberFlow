@@ -12,6 +12,8 @@ import { Calendar } from '@/components/ui/calendar';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays, addDays, isSameDay, isWithinInterval, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Cake, Bell, PieChart } from 'lucide-react';
+import { DashboardCharts } from "@/components/DashboardCharts";
 
 // Ajustando a interface Appointment para corresponder aos dados buscados no Dashboard
 interface Appointment {
@@ -162,7 +164,7 @@ const Dashboard = () => {
       setOccupancyRate((completedAppointments.length / hypotheticalCapacity) * 100);
 
       // Fetch Team Goals Summary
-      await fetchTeamGoalsSummary(completedAppointments);
+      await fetchTeamGoalsSummary(completedAppointments, servicePrices);
 
       setLoadingMetrics(false);
     };
@@ -170,7 +172,7 @@ const Dashboard = () => {
     fetchMetrics();
   }, [user, dateRange]);
 
-  const fetchTeamGoalsSummary = async (appointments: any[]) => {
+  const fetchTeamGoalsSummary = async (appointments: any[], servicePrices: Record<string, number> = {}) => {
     if (!user) return;
 
     const currentMonth = dateRange.from.getMonth() + 1;
@@ -421,6 +423,101 @@ const Dashboard = () => {
             </Card>
           </div>
         )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+          {/* Card Ranking de Profissionais */}
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Ranking de Profissionais</CardTitle>
+              <Users className="h-4 w-4 text-blue-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-xs font-bold mb-2">Top 3 do mês</div>
+              <ul className="space-y-1">
+                <li className="flex items-center justify-between">
+                  <span className="font-semibold">João Silva</span>
+                  <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs">120 atendimentos</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="font-semibold">Maria Souza</span>
+                  <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs">110 atendimentos</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="font-semibold">Carlos Lima</span>
+                  <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs">98 atendimentos</span>
+                </li>
+              </ul>
+            </CardContent>
+          </Card>
+
+          {/* Card Aniversariantes do Mês */}
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Aniversariantes do Mês</CardTitle>
+              <Cake className="h-4 w-4 text-pink-500" />
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-1">
+                <li className="flex items-center justify-between">
+                  <span className="font-semibold">Ana Paula</span>
+                  <span className="bg-pink-100 text-pink-700 px-2 py-1 rounded-full text-xs">08/12</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="font-semibold">Rafael Costa</span>
+                  <span className="bg-pink-100 text-pink-700 px-2 py-1 rounded-full text-xs">15/12</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="font-semibold">Juliana Alves</span>
+                  <span className="bg-pink-100 text-pink-700 px-2 py-1 rounded-full text-xs">22/12</span>
+                </li>
+              </ul>
+            </CardContent>
+          </Card>
+
+          {/* Card Campanhas de Marketing */}
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Campanhas de Marketing</CardTitle>
+              <Bell className="h-4 w-4 text-yellow-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-xs font-bold mb-2">Ativas</div>
+              <ul className="space-y-1">
+                <li className="flex items-center justify-between">
+                  <span className="font-semibold">Promoção Fim de Ano</span>
+                  <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs">WhatsApp</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="font-semibold">Indique e Ganhe</span>
+                  <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs">SMS</span>
+                </li>
+              </ul>
+            </CardContent>
+          </Card>
+
+          {/* Card Gamificação */}
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Gamificação</CardTitle>
+              <PieChart className="h-4 w-4 text-green-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-xs font-bold mb-2">Seu progresso</div>
+              <div className="flex items-center space-x-2">
+                <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs">Nível 3</span>
+                <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs">Badge: Fidelidade</span>
+              </div>
+              <div className="mt-2 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <div className="h-2 rounded-full bg-gradient-to-r from-green-400 via-blue-400 to-purple-400 transition-all" style={{ width: '70%' }} />
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">Complete mais 3 agendamentos para subir de nível!</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="mt-12">
+          <DashboardCharts />
+        </div>
 
         <div className="mt-8 text-center">
           <Button onClick={handleLogout} className="mt-4">

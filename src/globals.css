@@ -4,13 +4,13 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: linear-gradient(135deg, #e0f2fe 0%, #ede9fe 50%, #d1fae5 100%);
     --foreground: 222.2 84% 4.9%;
 
-    --card: 0 0% 100%;
+    --card: linear-gradient(135deg, #bae6fd 0%, #c7d2fe 50%, #bbf7d0 100%);
     --card-foreground: 222.2 84% 4.9%;
 
-    --popover: 0 0% 100%;
+    --popover: linear-gradient(135deg, #e0f2fe 0%, #ede9fe 50%, #d1fae5 100%);
     --popover-foreground: 222.2 84% 4.9%;
 
     --primary: 222.2 47.4% 11.2%;
@@ -34,7 +34,7 @@
 
     --radius: 0.5rem;
 
-    --sidebar-background: 0 0% 98%;
+    --sidebar-background: linear-gradient(135deg, #e0e7ff 0%, #f0fdfa 100%);
 
     --sidebar-foreground: 240 5.3% 26.1%;
 
@@ -52,10 +52,10 @@
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: linear-gradient(135deg, #312e81 0%, #6d28d9 50%, #065f46 100%);
     --foreground: 210 40% 98%;
 
-    --card: 222.2 84% 4.9%;
+    --card: linear-gradient(135deg, #1e293b 0%, #7c3aed 50%, #059669 100%);
     --card-foreground: 210 40% 98%;
 
     --popover: 222.2 84% 4.9%;

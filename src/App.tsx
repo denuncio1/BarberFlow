@@ -8,6 +8,7 @@ import Layout from "@/components/Layout";
 import { ThemeProvider } from "@/components/theme-provider";
 import { I18nextProvider } from "react-i18next";
 import i18n from "./i18n";
+import { CommandPalette } from "@/components/CommandPalette";
 
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -66,6 +67,19 @@ import SuppliersPage from "./pages/SuppliersPage";
 
 const queryClient = new QueryClient();
 
+const mockClients = [
+  { type: "client" as const, id: "1", name: "João Silva" },
+  { type: "client" as const, id: "2", name: "Maria Souza" },
+];
+const mockServices = [
+  { type: "service" as const, id: "1", name: "Corte Masculino" },
+  { type: "service" as const, id: "2", name: "Barba" },
+];
+const mockProducts = [
+  { type: "product" as const, id: "1", name: "Pomada Modeladora" },
+  { type: "product" as const, id: "2", name: "Shampoo" },
+];
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
@@ -73,6 +87,7 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
+          <CommandPalette clients={mockClients} services={mockServices} products={mockProducts} />
           <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <SessionContextProvider>
               <Routes>

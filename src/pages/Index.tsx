@@ -1,6 +1,7 @@
 import { MadeWithDyad } from "@/components/made-with-dyad";
 import Header from "@/components/Header"; // Import the new Header component
 import { useTranslation } from 'react-i18next'; // Import useTranslation
+import { SelfServiceKiosk } from "@/components/SelfServiceKiosk";
 
 const Index = () => {
   const { t } = useTranslation();
@@ -17,6 +18,9 @@ const Index = () => {
           <p className="text-lg text-gray-500 dark:text-gray-500 mt-2">
             {t('welcome_message')}
           </p>
+          <div className="mt-8">
+            <SelfServiceKiosk />
+          </div>
         </div>
       </main>
       <MadeWithDyad />

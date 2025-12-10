@@ -67,6 +67,7 @@ const navItems = [
       { name: 'subscription_management', href: '/subscription-club/management', icon: CreditCard },
       { name: 'balance_withdrawal', href: '/subscription-club/balance', icon: DollarSign },
       { name: 'chargeback_requests', href: '/subscription-club/chargebacks', icon: TrendingDown },
+      { name: 'subscription_ltv_report', href: '/subscription-club/ltv', icon: PieChart },
       { name: 'subscription_settings', href: '/subscription-club/settings', icon: Settings },
     ],
   },
@@ -93,7 +94,10 @@ const Sidebar = () => {
   const { t } = useTranslation();
 
   return (
-    <aside className="w-64 bg-sidebar text-sidebar-foreground border-r border-sidebar-border p-4 flex flex-col">
+    <aside
+      className="w-64 bg-[var(--sidebar-background)] text-[var(--sidebar-foreground)] border-r border-[var(--sidebar-border)] p-4 flex flex-col rounded-xl shadow-xl transition-all duration-500"
+      style={{ background: 'var(--sidebar-background)' }}
+    >
       <nav className="flex-grow">
         <ul className="space-y-2">
           {navItems.map((item) => (
@@ -117,11 +121,11 @@ const Sidebar = () => {
                     child.children ? (
                       <Collapsible key={child.name} defaultOpen={false}>
                         <CollapsibleTrigger className={cn(
-                          "flex items-center justify-between w-full space-x-3 p-2 rounded-md transition-colors",
-                          "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                          "flex items-center justify-between w-full space-x-3 p-2 rounded-lg transition-all duration-300",
+                          "hover:bg-gradient-to-r hover:from-blue-100 hover:via-purple-100 hover:to-green-100 hover:scale-[1.03] hover:shadow",
                         )}>
                           <div className="flex items-center space-x-3">
-                            <child.icon className="h-5 w-5" />
+                            <child.icon className="h-5 w-5 transition-transform duration-300 group-hover:scale-110" />
                             <span>{t(child.name)}</span>
                           </div>
                           <ChevronDown className="h-4 w-4 transition-transform data-[state=open]:rotate-180" />
@@ -132,13 +136,13 @@ const Sidebar = () => {
                               <Link
                                 to={subChild.href}
                                 className={cn(
-                                  "flex items-center space-x-3 p-2 rounded-md transition-colors",
+                                  "flex items-center space-x-3 p-2 rounded-lg transition-all duration-300",
                                   location.pathname === subChild.href
-                                    ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                                    : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                                    ? "bg-gradient-to-r from-blue-100 via-purple-100 to-green-100 text-[var(--sidebar-primary-foreground)] scale-[1.04] shadow-sm"
+                                    : "hover:bg-gradient-to-r hover:from-blue-50 hover:via-purple-50 hover:to-green-50 hover:scale-[1.03] hover:shadow-sm"
                                 )}
                               >
-                                <subChild.icon className="h-4 w-4" />
+                                <subChild.icon className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
                                 <span className="text-sm">{t(subChild.name)}</span>
                               </Link>
                             </li>
@@ -169,13 +173,13 @@ const Sidebar = () => {
                 <Link
                   to={item.href}
                   className={cn(
-                    "flex items-center space-x-3 p-2 rounded-md transition-colors",
+                    "flex items-center space-x-3 p-2 rounded-lg transition-all duration-300",
                     location.pathname === item.href
-                      ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                      : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                      ? "bg-gradient-to-r from-blue-300 via-purple-300 to-green-300 text-[var(--sidebar-primary-foreground)] scale-[1.04] shadow-lg"
+                      : "hover:bg-gradient-to-r hover:from-blue-200 hover:via-purple-200 hover:to-green-200 hover:scale-[1.03] hover:shadow-lg hover:text-[var(--sidebar-accent-foreground)]"
                   )}
                 >
-                  <item.icon className="h-5 w-5" />
+                  <item.icon className="h-5 w-5 transition-transform duration-300 group-hover:scale-110" />
                   <span>{t(item.name)}</span>
                 </Link>
               </li>
