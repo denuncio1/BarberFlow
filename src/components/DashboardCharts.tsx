@@ -13,7 +13,7 @@ import {
   PointElement,
   LineElement,
 } from "chart.js";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "../integrations/supabase/client";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { exportToCSV } from "@/lib/exportUtils";
 import { exportToPDF } from "@/lib/pdfUtils";

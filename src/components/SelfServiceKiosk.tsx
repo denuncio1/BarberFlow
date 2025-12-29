@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CalendarDays, User, CheckCircle, Clock, Smartphone, CreditCard } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "../integrations/supabase/client";
 import { sendNotification } from "@/lib/notifications";
 
 export const SelfServiceKiosk: React.FC = () => {

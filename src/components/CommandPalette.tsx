@@ -41,7 +41,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ clients, service
         placeholder="Pesquisar clientes, serviços, produtos..."
         value={search}
         onValueChange={setSearch}
-        icon={<Search />}
       />
       <CommandList>
         <CommandGroup heading="Resultados">
