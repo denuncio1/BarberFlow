@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useSession } from '@/contexts/SessionContext';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { supabase } from '../integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,7 +33,6 @@ interface TeamGoalSummary {
 }
 
 const Dashboard = () => {
-  const { session, isLoading, user } = useSession();
   const navigate = useNavigate();
   const [occupancyRate, setOccupancyRate] = useState<number>(0);
   const [averageTicket, setAverageTicket] = useState<number>(0);
@@ -47,17 +45,9 @@ const Dashboard = () => {
   });
   const [selectedRangeOption, setSelectedRangeOption] = useState('this_month');
 
-  if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">Carregando...</div>;
-  }
 
-  if (!session) {
-    return <Navigate to="/login" replace />;
-  }
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-  };
+
 
   const updateDateRange = (option: string) => {
     const today = new Date();
@@ -102,8 +92,6 @@ const Dashboard = () => {
 
   useEffect(() => {
     const fetchMetrics = async () => {
-      if (!user) return;
-
       setLoadingMetrics(true);
 
       const { data: appointmentsData, error } = await supabase
@@ -117,7 +105,6 @@ const Dashboard = () => {
           signature_used,
           service_id
         `)
-        .eq('user_id', user.id)
         .gte('appointment_date', format(dateRange.from, 'yyyy-MM-dd') + 'T00:00:00.000Z')
         .lte('appointment_date', format(dateRange.to, 'yyyy-MM-dd') + 'T23:59:59.999Z');
 
@@ -170,11 +157,9 @@ const Dashboard = () => {
     };
 
     fetchMetrics();
-  }, [user, dateRange]);
+  }, [dateRange]);
 
   const fetchTeamGoalsSummary = async (appointments: any[], servicePrices: Record<string, number> = {}) => {
-    if (!user) return;
-
     const currentMonth = dateRange.from.getMonth() + 1;
     const currentYear = dateRange.from.getFullYear();
 
@@ -183,7 +168,6 @@ const Dashboard = () => {
       const { data: goalsData, error: goalsError } = await supabase
         .from('team_goals')
         .select('*')
-        .eq('user_id', user.id)
         .eq('month', currentMonth)
         .eq('year', currentYear);
 
@@ -519,11 +503,11 @@ const Dashboard = () => {
           <DashboardCharts />
         </div>
 
-        <div className="mt-8 text-center">
+        {/* <div className="mt-8 text-center">
           <Button onClick={handleLogout} className="mt-4">
             Sair
           </Button>
-        </div>
+        </div> */}
     </>
   );
 };
